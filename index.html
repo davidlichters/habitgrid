@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Habit Tracker</title>
 
-<!-- Vollbild auf dem Homescreen, keine Safari-Leiste -->
+<!-- Full screen on the home screen, no Safari chrome -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -15,8 +15,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-</head>
-<body>
+
 <style>
   :root{
     --white:#FFFFFF;
@@ -25,6 +24,9 @@
     --line:#D2D2D7;
     --fill:#F5F5F7;
     --blue:#0071E3;
+    --ios-grey:#8E8E93;
+    --ios-ground:#F2F2F7;
+    --ios-sep:#E3E3E8;
     --g-full:linear-gradient(96deg,#5AC8FA 0%,#5E5CE6 34%,#D63AD0 67%,#FF6B2C 100%);
     --sf:-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
          "Helvetica Neue", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -44,7 +46,7 @@
   }
   .wrap{max-width:520px;margin:0 auto;padding:0 16px}
 
-  /* ---------- Tagesleiste ---------- */
+  /* ---------- header ---------- */
   .top{
     position:sticky;top:0;z-index:5;background:var(--white);
     padding:calc(14px + env(safe-area-inset-top)) 0 12px;
@@ -64,10 +66,11 @@
     color:transparent;-webkit-text-fill-color:transparent;
     padding-bottom:.06em;
   }
+
   .daynav{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px}
   .daynav b{
     font-size:13px;font-weight:600;color:var(--grey);letter-spacing:.01em;
-    font-variant-numeric:tabular-nums;min-width:74px;text-align:center;
+    font-variant-numeric:tabular-nums;min-width:88px;text-align:center;
   }
   .navbtn{
     width:28px;height:28px;border-radius:50%;flex:0 0 auto;
@@ -80,16 +83,12 @@
   .navbtn[disabled]{opacity:.28;cursor:default}
   .navbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-  .letters{
-    display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:16px;
-  }
+  .letters{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:16px}
   .letters span{
     text-align:center;font-size:15px;font-weight:600;letter-spacing:-.01em;
     color:var(--grey);
   }
-  .today{
-    display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px;
-  }
+  .today{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px}
   .today button{
     appearance:none;aspect-ratio:1;width:100%;border-radius:50%;cursor:pointer;
     border:1.5px solid var(--line);background:var(--white);padding:0;
@@ -100,14 +99,15 @@
   .today button:active{transform:scale(.9)}
   .today button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-  /* ---------- Raster ---------- */
+  /* menu bar hidden */
+  body.bare .menubar{display:none}
+  body.bare .top{padding-bottom:14px}
+
+  /* ---------- grids ---------- */
   .cards{display:flex;flex-direction:column;gap:16px;margin-top:18px}
   .card{display:flex;flex-direction:column;gap:9px}
   .head{display:flex;align-items:center;gap:10px;height:20px}
-  .glyph{
-    font-size:19px;font-weight:600;letter-spacing:-.02em;color:var(--c);
-    line-height:1;
-  }
+  .glyph{font-size:19px;font-weight:600;letter-spacing:-.02em;color:var(--c);line-height:1}
   .card:last-child .grid{margin-bottom:4px}
   .grid{
     display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;
@@ -117,65 +117,194 @@
   .grid div.on{opacity:1}
   .grid div.now{box-shadow:0 0 0 1.5px var(--ink);opacity:1;background:var(--white)}
   .grid div.now.on{background:var(--c)}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  body.bare .grid div.now{box-shadow:none;background:var(--c)}
+  body.bare .grid div.now:not(.on){opacity:.16}
 
-  /* ---------- Sicherung ---------- */
-  .status{font-size:12.5px;font-weight:600;color:var(--ink);letter-spacing:.01em;font-variant-numeric:tabular-nums}
-  .status.warn{color:#FF375F}
-  .pill{
-    appearance:none;background:var(--white);border:1px solid var(--line);color:var(--grey);
-    border-radius:999px;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;
-    font-family:inherit;letter-spacing:-.005em;touch-action:manipulation;flex:0 0 auto;
+  /* ---------- settings panel ---------- */
+  .panel{display:none;margin-top:16px}
+  .panel.open{display:block}
+  .list{
+    background:var(--white);border:1px solid var(--ios-sep);
+    border-radius:14px;overflow:hidden;
   }
-  .pill:active{border-color:var(--grey);color:var(--ink)}
-  .pill:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-  .panel{display:none;flex-direction:column;gap:10px;background:var(--fill);border-radius:12px;padding:14px;margin-top:16px}
-  .panel.open{display:flex}
-  .panel p{margin:0;font-size:12.5px;color:var(--grey);line-height:1.45}
-  .panel a{color:var(--blue);text-decoration:none}
-  .panel input{
-    appearance:none;width:100%;border:1px solid var(--line);background:var(--white);
-    border-radius:10px;padding:10px 12px;font-family:inherit;font-size:15px;color:var(--ink);
+  .row{display:flex;align-items:center;gap:12px;padding:0 14px;min-height:52px}
+  .list > .row:not(:first-child){border-top:1px solid var(--ios-sep)}
+  .note.open + .row{border-top:0}
+  .row .main{
+    appearance:none;background:none;border:0;padding:0;margin:0;flex:1;
+    display:flex;align-items:center;gap:12px;cursor:pointer;font-family:inherit;
+    font-size:17px;color:var(--ink);letter-spacing:-.02em;text-align:left;
+    touch-action:manipulation;min-height:52px;
   }
-  .panel input:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:transparent}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  .row .pill{background:var(--white)}
+  .row .main:active{opacity:.45}
+  .row .main:focus-visible{outline:2px solid var(--blue);outline-offset:-3px;border-radius:8px}
+  .ico{
+    width:29px;height:29px;border-radius:7px;flex:0 0 auto;
+    display:grid;place-items:center;
+  }
+  .ico svg{width:18px;height:18px;stroke:#fff;stroke-width:2.1;fill:none;
+           stroke-linecap:round;stroke-linejoin:round}
+  .i-connect{background:#0A84FF}
+  .i-disconnect{background:#FF3B30}
+  .i-refresh{background:#30D158}
+  .info{
+    appearance:none;background:none;border:0;padding:6px;margin:0;cursor:pointer;
+    flex:0 0 auto;line-height:0;touch-action:manipulation;
+  }
+  .info svg{width:21px;height:21px;stroke:#0A84FF;stroke-width:1.6;fill:none}
+  .info:active{opacity:.45}
+  .info:focus-visible{outline:2px solid var(--blue);outline-offset:0;border-radius:50%}
+  .note{
+    display:none;margin:0;padding:0 14px 14px;font-size:13px;line-height:1.45;
+    color:var(--ios-grey);letter-spacing:-.005em;border-top:1px solid var(--ios-sep);
+    padding-top:12px;
+  }
+  .note.open{display:block}
+  .note b{color:var(--ink);font-weight:600}
+  .plain{flex:1;font-size:17px;letter-spacing:-.02em}
+  .switch{
+    appearance:none;border:0;padding:0;margin:0;flex:0 0 auto;cursor:pointer;
+    width:51px;height:31px;border-radius:16px;background:#E9E9EB;position:relative;
+    transition:background .22s ease;touch-action:manipulation;
+  }
+  .switch i{
+    position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;
+    background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18);
+    transition:transform .22s ease;
+  }
+  .switch[aria-checked="true"]{background:#34C759}
+  .switch[aria-checked="true"] i{transform:translateX(20px)}
+  .switch:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .status{
+    margin-top:10px;text-align:center;font-size:12.5px;font-weight:600;
+    color:var(--grey);letter-spacing:.01em;font-variant-numeric:tabular-nums;
+  }
+  .status.warn{color:#FF3B30}
+
+  /* ---------- iOS style sheet ---------- */
+  .sheet{
+    display:none;position:fixed;inset:0;z-index:50;background:var(--ios-ground);
+    padding:calc(14px + env(safe-area-inset-top)) 22px calc(20px + env(safe-area-inset-bottom));
+    overflow-y:auto;
+  }
+  .sheet.open{display:block}
+  .sheetbar{display:flex;align-items:center;justify-content:space-between}
+  .circbtn{
+    appearance:none;border:0;padding:0;margin:0;cursor:pointer;
+    width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+    touch-action:manipulation;
+  }
+  .circbtn svg{width:22px;height:22px;stroke-width:2.6;fill:none;
+               stroke-linecap:round;stroke-linejoin:round}
+  .close{background:#fff}
+  .close svg{stroke:#000}
+  .ok{background:#C7C7CC}
+  .ok svg{stroke:#fff}
+  .ok.ready{background:#0A84FF}
+  .circbtn:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+  .hero{display:grid;place-items:center;margin:44px 0 34px}
+  .hero svg{width:74px;height:74px;stroke:#0A84FF;stroke-width:2;fill:none;
+            stroke-linecap:round;stroke-linejoin:round}
+  .sheet h2{
+    margin:0;font-size:22px;font-weight:700;color:#000;
+    letter-spacing:-.02em;line-height:1.24;
+  }
+  .sheet .sub{
+    margin:0;font-size:22px;font-weight:400;color:var(--ios-grey);
+    letter-spacing:-.02em;line-height:1.24;
+  }
+  .sheet input{
+    appearance:none;width:100%;margin-top:30px;border:0;background:#fff;
+    border-radius:26px;padding:16px 22px;font-family:inherit;font-size:17px;
+    color:#000;letter-spacing:-.02em;
+  }
+  .sheet input::placeholder{color:#000;opacity:.32}
+  .sheet input:focus{outline:2px solid var(--blue);outline-offset:-2px}
+  .sheet .foot{
+    margin:16px 0 0;font-size:13.5px;line-height:1.42;color:var(--ios-grey);
+    letter-spacing:-.005em;
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+</head>
+<body>
 
 <div class="wrap">
   <div class="top">
-    <h1 class="mark"><button type="button" id="toggleP" aria-label="Sicherung">Habit <span>Tracker</span></button></h1>
-    <div class="daynav">
-      <button class="navbtn" id="prevW" aria-label="Woche zur&#252;ck">&#171;</button>
-      <button class="navbtn" id="prev" aria-label="Tag zur&#252;ck">&#8249;</button>
-      <b id="dlabel"></b>
-      <button class="navbtn" id="next" aria-label="Tag vor">&#8250;</button>
-      <button class="navbtn" id="nextW" aria-label="Woche vor">&#187;</button>
+    <h1 class="mark"><button type="button" id="titleBtn" aria-label="Settings">Habit <span>Tracker</span></button></h1>
+
+    <div class="menubar" id="menubar">
+      <div class="daynav">
+        <button class="navbtn" id="prevW" aria-label="One week back">&#171;</button>
+        <button class="navbtn" id="prev" aria-label="One day back">&#8249;</button>
+        <b id="dlabel"></b>
+        <button class="navbtn" id="next" aria-label="One day forward">&#8250;</button>
+        <button class="navbtn" id="nextW" aria-label="One week forward">&#187;</button>
+      </div>
+      <div class="letters" id="letters"></div>
+      <div class="today" id="today"></div>
     </div>
-    <div class="letters" id="letters"></div>
-    <div class="today" id="today"></div>
   </div>
 
   <div class="panel" id="panel">
-      <div class="status" id="status">Sicherung aus</div>
-      <p>Die H&auml;kchen liegen auf diesem Ger&auml;t. Mit einem GitHub-Schl&uuml;ssel
-         legt die App zus&auml;tzlich eine geheime Kopie in deinem GitHub ab, nach jedem Tippen.</p>
-      <p>Schl&uuml;ssel holen: <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=HabitGrid" target="_blank" rel="noopener">github.com/settings/tokens</a>
-         &rarr; nur den Haken <b>gist</b> setzen &rarr; erzeugen &rarr; hier einsetzen.
-         Der Schl&uuml;ssel bleibt auf diesem Ger&auml;t und geht nur an GitHub.</p>
-      <input id="token" type="password" inputmode="text" autocomplete="off" autocapitalize="off"
-             autocorrect="off" spellcheck="false" placeholder="ghp_...">
+    <div class="list">
+
       <div class="row">
-        <button class="pill" id="connect" type="button">Verbinden</button>
-        <button class="pill" id="pushNow" type="button">Jetzt sichern</button>
-        <button class="pill" id="pullNow" type="button">Von GitHub holen</button>
-        <button class="pill" id="download" type="button">Als Datei sichern</button>
-        <button class="pill" id="forget" type="button">Schl&uuml;ssel l&ouml;schen</button>
+        <button class="main" id="rowConnect" type="button">
+          <span class="ico i-connect"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          <span>Connect</span>
+        </button>
+        <button class="info" type="button" data-note="nConnect" aria-label="About Connect"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
       </div>
-      <p id="gistline"></p>
+      <p class="note" id="nConnect"><b>Turns the backup on.</b> Paste a GitHub token and every tap is saved to a secret gist in your own GitHub, from then on by itself. Get the token at github.com/settings/tokens, classic token, tick only the <b>gist</b> scope. It is stored on this iPhone and sent to GitHub, nowhere else.</p>
+
+      <div class="row">
+        <button class="main" id="rowDisconnect" type="button">
+          <span class="ico i-disconnect"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l1.2-1.2"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 6.1 7.7"/><path d="M3.5 3.5l17 17"/></svg></span>
+          <span>Disconnect</span>
+        </button>
+        <button class="info" type="button" data-note="nDisconnect" aria-label="About Disconnect"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
+      </div>
+      <p class="note" id="nDisconnect"><b>Turns the backup off.</b> The token is deleted from this iPhone and nothing is saved to GitHub any more. Your ticks stay on this iPhone and the copy already on GitHub is left untouched.</p>
+
+      <div class="row">
+        <button class="main" id="rowRefresh" type="button">
+          <span class="ico i-refresh"><svg viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-2.49-6.01"/><path d="M20.5 3.4v5.1h-5.1"/></svg></span>
+          <span>Refresh</span>
+        </button>
+        <button class="info" type="button" data-note="nRefresh" aria-label="About Refresh"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
+      </div>
+      <p class="note" id="nRefresh"><b>Pulls the copy from GitHub.</b> If the copy is newer than what is on this iPhone, it replaces what you see. This is how you get your ticks back on a new phone: connect with the same token, then Refresh.</p>
+
+      <div class="row">
+        <span class="plain">Hide menu bar</span>
+        <button class="switch" id="hideBar" type="button" role="switch" aria-checked="false" aria-label="Hide menu bar"><i></i></button>
+      </div>
+    </div>
+    <div class="status" id="status">Backup off</div>
   </div>
 
   <div class="cards" id="cards"></div>
+</div>
+
+<!-- Connect sheet -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Connect to GitHub">
+  <div class="sheetbar">
+    <button class="circbtn close" id="sheetClose" type="button" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
+    <button class="circbtn ok" id="sheetOk" type="button" aria-label="Connect"><svg viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></svg></button>
+  </div>
+
+  <div class="hero">
+    <svg viewBox="0 0 24 24"><path d="M20 17.6A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 15.25"/><path d="M12 12.5V21"/><path d="M8.4 16.1L12 12.5l3.6 3.6"/></svg>
+  </div>
+
+  <h2>Connect to GitHub</h2>
+  <p class="sub">Enter your token to back up your ticks.</p>
+
+  <input id="token" type="password" inputmode="text" autocomplete="off" autocapitalize="off"
+         autocorrect="off" spellcheck="false" placeholder="Token">
+
+  <p class="foot">Create the token at github.com/settings/tokens, classic token, and tick only the gist scope. It is stored on this iPhone and sent to GitHub, nowhere else. Nobody else can read or change your ticks with the link to this app.</p>
 </div>
 
 <script>
@@ -183,19 +312,21 @@
   "use strict";
 
   var KEY = "habitgrid.v3";
-  var KEY_ALT = "habitgrid.v2";       /* Fassung ohne Zeitstempel */
+  var KEY_OLD = "habitgrid.v2";       /* version without a timestamp */
   var TKEY = "habitgrid.token";
   var GKEY = "habitgrid.gist";
+  var BKEY = "habitgrid.hidebar";
   var updatedAt = 0;
+
   var WEEKS = 51;
   var CELLS = WEEKS * 7;              /* 357 */
 
-  /* Festes Jahresraster: Zelle 1 = Montag, 05.01.2026 (R1 C1).
-     Zelle 357 = Sonntag, 27.12.2026 (R7 C51).
-     Reihe = Wochentag (R1 Montag ... R7 Sonntag), Spalte = Kalenderwoche. */
+  /* Fixed year grid: cell 1 = Monday, 05-01-2026 (R1 C1).
+     Cell 357 = Sunday, 27-12-2026 (R7 C51).
+     Row = weekday (R1 Monday ... R7 Sunday), column = calendar week. */
   var START = new Date(2026, 0, 5);
 
-  /* Feste Gewohnheiten. Nicht aenderbar. */
+  /* Fixed habits. Not editable. */
   var HABITS = [
     { k: "S", c: "#FF7E00" },
     { k: "F", c: "#FF375F" },
@@ -206,11 +337,10 @@
     { k: "G", c: "#30D158" }
   ];
 
-
   var data = {};
   HABITS.forEach(function(h){ data[h.k] = {}; });
 
-  function uebernehmen(o){
+  function take(o){
     if (!o || typeof o !== "object") return;
     HABITS.forEach(function(h){
       data[h.k] = (o[h.k] && typeof o[h.k] === "object") ? o[h.k] : {};
@@ -221,35 +351,36 @@
       var raw = localStorage.getItem(KEY);
       if (raw) {
         var p = JSON.parse(raw);
-        if (p && p.days) { uebernehmen(p.days); updatedAt = p.updatedAt || 0; return; }
+        if (p && p.days) { take(p.days); updatedAt = p.updatedAt || 0; return; }
       }
-      var frueher = localStorage.getItem(KEY_ALT);
-      if (frueher) { uebernehmen(JSON.parse(frueher)); updatedAt = 1; save(); }
+      var older = localStorage.getItem(KEY_OLD);
+      if (older) { take(JSON.parse(older)); updatedAt = 1; save(); }
     } catch (e) {}
   }
   function save(){
     try { localStorage.setItem(KEY, JSON.stringify({ updatedAt: updatedAt, days: data })); } catch (e) {}
   }
+  function remember(k, v){
+    try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {}
+  }
+  function stored(k){ try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
 
   function d2(n){ return (n < 10 ? "0" : "") + n; }
-  /* Einheitliches Anzeigeformat: 05-09-2026 */
+  /* One display format everywhere: 05-09-2026 */
   function fmt(d){ return d2(d.getDate()) + "-" + d2(d.getMonth()+1) + "-" + d.getFullYear(); }
   function key(d){ return d.getFullYear() + "-" + d2(d.getMonth()+1) + "-" + d2(d.getDate()); }
   function plain(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
   function addDays(d, n){ var x = plain(d); x.setDate(x.getDate() + n); return x; }
   function index(d){ return Math.round((plain(d) - START) / 86400000); }
 
-  /* Das echte Datum des Geraets. */
+  /* The real date of the device. */
   var today = plain(new Date());
   var todayIdx = index(today);
-
-  /* Bis wohin man eintragen darf: heute, aber nie ueber das Raster hinaus. */
   var maxIdx = Math.min(todayIdx, CELLS - 1);
   var selIdx = Math.max(0, Math.min(todayIdx, CELLS - 1));
-
   function selDate(){ return addDays(START, selIdx); }
 
-  /* ---------- Tagesleiste ---------- */
+  /* ---------- day bar ---------- */
 
   var lettersEl = document.getElementById("letters");
   var todayEl = document.getElementById("today");
@@ -264,7 +395,7 @@
     var b = document.createElement("button");
     b.type = "button";
     b.style.setProperty("--c", h.c);
-    b.setAttribute("aria-label", "Gewohnheit " + h.k);
+    b.setAttribute("aria-label", "Habit " + h.k);
     b.addEventListener("click", function(){
       var dk = key(selDate());
       if (data[h.k][dk]) delete data[h.k][dk]; else data[h.k][dk] = 1;
@@ -279,20 +410,18 @@
 
   function paintTop(){
     var d = selDate(), dk = key(d);
-    dlabel.textContent = selIdx === todayIdx ? "Heute" : fmt(d);
+    dlabel.textContent = selIdx === todayIdx ? "Today" : fmt(d);
     document.getElementById("prev").disabled = selIdx <= 0;
     document.getElementById("prevW").disabled = selIdx <= 0;
     document.getElementById("next").disabled = selIdx >= maxIdx;
     document.getElementById("nextW").disabled = selIdx >= maxIdx;
-
-
     HABITS.forEach(function(h, i){
       toggles[i].className = data[h.k][dk] ? "on" : "";
       toggles[i].setAttribute("aria-pressed", data[h.k][dk] ? "true" : "false");
     });
   }
 
-  /* ---------- 7 Raster, je 7 x 51, Spalte fuer Spalte ---------- */
+  /* ---------- seven grids, 7 x 51 each, filled column by column ---------- */
 
   var cardsEl = document.getElementById("cards");
   var grids = [];
@@ -325,7 +454,6 @@
     }
     card.appendChild(grid);
     cardsEl.appendChild(card);
-
     grids.push({ h: h, cells: cells });
   });
 
@@ -340,169 +468,180 @@
       }
     });
   }
-
   function paintAll(){ paintTop(); paintGrids(); }
 
-  function springe(n){
-    var neu = Math.max(0, Math.min(maxIdx, selIdx + n));
-    if (neu !== selIdx) { selIdx = neu; paintAll(); }
+  function jump(n){
+    var v = Math.max(0, Math.min(maxIdx, selIdx + n));
+    if (v !== selIdx) { selIdx = v; paintAll(); }
   }
-  document.getElementById("prevW").addEventListener("click", function(){ springe(-7); });
-  document.getElementById("prev").addEventListener("click", function(){ springe(-1); });
-  document.getElementById("next").addEventListener("click", function(){ springe(1); });
-  document.getElementById("nextW").addEventListener("click", function(){ springe(7); });
+  document.getElementById("prevW").addEventListener("click", function(){ jump(-7); });
+  document.getElementById("prev").addEventListener("click", function(){ jump(-1); });
+  document.getElementById("next").addEventListener("click", function(){ jump(1); });
+  document.getElementById("nextW").addEventListener("click", function(){ jump(7); });
 
-  /* ---------- Sicherung in einem geheimen GitHub-Gist ---------- */
+  /* ---------- backup in a secret GitHub gist ---------- */
 
   var API = "https://api.github.com";
-  var DATEI = "habitgrid.json";
-  var pushTimer = null, laeuft = false, nochmal = false;
-
-  function token(){ try { return localStorage.getItem(TKEY) || ""; } catch (e) { return ""; } }
-  function gistId(){ try { return localStorage.getItem(GKEY) || ""; } catch (e) { return ""; } }
-  function merken(k, v){ try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
+  var FILE = "habitgrid.json";
+  var pushTimer = null, busy = false, again = false;
 
   var statusEl = document.getElementById("status");
-  var gistEl = document.getElementById("gistline");
 
-  function uhr(){ var d = new Date(); return d2(d.getHours()) + ":" + d2(d.getMinutes()); }
-  function melde(text, warn){
+  function clock(){ var d = new Date(); return d2(d.getHours()) + ":" + d2(d.getMinutes()); }
+  function say(text, warn){
     statusEl.textContent = text;
     statusEl.className = warn ? "status warn" : "status";
   }
-  function zeigeGist(){
-    var id = gistId();
-    gistEl.innerHTML = id
-      ? 'Kopie: <a href="https://gist.github.com/' + id + '" target="_blank" rel="noopener">gist.github.com/' + id.slice(0,8) + '</a>'
-      : "";
-  }
-  function kopf(){
+  function headers(){
     return {
-      "Authorization": "Bearer " + token(),
+      "Authorization": "Bearer " + stored(TKEY),
       "Accept": "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
       "Content-Type": "application/json"
     };
   }
-  function inhalt(){ return JSON.stringify({ updatedAt: updatedAt, days: data }, null, 1); }
-
-  function hatDaten(){
-    for (var i = 0; i < HABITS.length; i++) {
-      for (var k in data[HABITS[i].k]) { if (k) return true; }
-    }
-    return false;
-  }
-  /* Ohne Schluessel warnen, sobald wirklich etwas zu verlieren ist. */
-  function ausStatus(){ melde("Sicherung aus", hatDaten()); }
+  function payload(){ return JSON.stringify({ updatedAt: updatedAt, days: data }, null, 1); }
 
   function planPush(){
-    if (!token()) { ausStatus(); return; }
-    melde("sichert ...");
+    if (!stored(TKEY)) return;
+    say("Saving ...");
     clearTimeout(pushTimer);
-    pushTimer = setTimeout(pushen, 1200);
+    pushTimer = setTimeout(push, 1200);
   }
 
-  function pushen(){
-    if (!token()) { ausStatus(); return Promise.resolve(); }
-    if (laeuft) { nochmal = true; return Promise.resolve(); }
-    laeuft = true;
-    var id = gistId();
-    var body = { description: "HabitGrid", files: {} };
-    body.files[DATEI] = { content: inhalt() };
+  function push(){
+    if (!stored(TKEY)) { say("Backup off"); return Promise.resolve(); }
+    if (busy) { again = true; return Promise.resolve(); }
+    busy = true;
+    var id = stored(GKEY);
+    var body = { description: "Habit Tracker", files: {} };
+    body.files[FILE] = { content: payload() };
     if (!id) body.public = false;
     return fetch(id ? API + "/gists/" + id : API + "/gists", {
-      method: id ? "PATCH" : "POST", headers: kopf(), body: JSON.stringify(body)
+      method: id ? "PATCH" : "POST", headers: headers(), body: JSON.stringify(body)
     }).then(function(r){
-      if (r.status === 401) throw new Error("Schluessel ungueltig");
-      if (r.status === 403) throw new Error("Schluessel darf keine Gists");
-      if (r.status === 404 && id) { merken(GKEY, ""); throw new Error("Kopie weg, nochmal tippen"); }
+      if (r.status === 401) throw new Error("Invalid token");
+      if (r.status === 403) throw new Error("Token has no gist scope");
+      if (r.status === 404 && id) { remember(GKEY, ""); throw new Error("Copy gone, tap again"); }
       if (!r.ok) throw new Error("GitHub " + r.status);
       return r.json();
     }).then(function(j){
-      if (j && j.id) merken(GKEY, j.id);
-      zeigeGist();
-      melde("gesichert " + uhr());
+      if (j && j.id) remember(GKEY, j.id);
+      say("Saved " + clock());
     }).catch(function(e){
-      melde(e.message || "nicht gesichert", true);
+      say(e.message || "Not saved", true);
     }).then(function(){
-      laeuft = false;
-      if (nochmal) { nochmal = false; pushen(); }
+      busy = false;
+      if (again) { again = false; push(); }
     });
   }
 
-  function holen(beimStart){
-    var id = gistId();
-    if (!token()) { ausStatus(); return Promise.resolve(); }
-    if (!id) { return pushen(); }
-    return fetch(API + "/gists/" + id, { headers: kopf(), cache: "no-store" })
+  function pull(atStart){
+    var id = stored(GKEY);
+    if (!stored(TKEY)) { say("Backup off", true); return Promise.resolve(); }
+    if (!id) return push();
+    return fetch(API + "/gists/" + id, { headers: headers(), cache: "no-store" })
       .then(function(r){
-        if (r.status === 401) throw new Error("Schluessel ungueltig");
+        if (r.status === 401) throw new Error("Invalid token");
         if (!r.ok) throw new Error("GitHub " + r.status);
         return r.json();
       })
       .then(function(j){
-        var f = j.files && j.files[DATEI];
-        if (!f || !f.content) throw new Error("Kopie ist leer");
+        var f = j.files && j.files[FILE];
+        if (!f || !f.content) throw new Error("Copy is empty");
         var p = JSON.parse(f.content);
-        if (!p || !p.days) throw new Error("Kopie unlesbar");
+        if (!p || !p.days) throw new Error("Copy unreadable");
         if ((p.updatedAt || 0) > updatedAt) {
-          uebernehmen(p.days);
+          take(p.days);
           updatedAt = p.updatedAt || 0;
           save();
           paintAll();
-          melde("von GitHub geholt " + uhr());
-        } else if (beimStart) {
-          melde("gesichert " + uhr());
+          say("Loaded from GitHub " + clock());
+        } else if (atStart) {
+          say("Saved " + clock());
         } else {
-          melde("hier ist neuer, nichts geholt");
+          say("This phone is newer, nothing loaded");
         }
       })
-      .catch(function(e){ melde(e.message || "holen ging nicht", true); });
+      .catch(function(e){ say(e.message || "Could not load", true); });
   }
 
-  /* ---------- Bedienung ---------- */
+  /* ---------- settings panel ---------- */
 
   var panel = document.getElementById("panel");
-  var tokenEl = document.getElementById("token");
 
-  document.getElementById("toggleP").addEventListener("click", function(){
+  document.getElementById("titleBtn").addEventListener("click", function(){
     panel.classList.toggle("open");
-    zeigeGist();
   });
-  document.getElementById("connect").addEventListener("click", function(){
-    var t = tokenEl.value.trim();
-    if (!t) { melde("kein Schluessel eingesetzt", true); return; }
-    merken(TKEY, t);
+
+  Array.prototype.forEach.call(document.querySelectorAll(".info"), function(btn){
+    btn.addEventListener("click", function(){
+      var n = document.getElementById(btn.getAttribute("data-note"));
+      if (n) n.classList.toggle("open");
+    });
+  });
+
+  document.getElementById("rowDisconnect").addEventListener("click", function(){
+    remember(TKEY, "");
+    remember(GKEY, "");
+    say("Backup off");
+  });
+  document.getElementById("rowRefresh").addEventListener("click", function(){ pull(false); });
+
+  /* hide menu bar */
+  var hideBtn = document.getElementById("hideBar");
+  function setBare(on){
+    document.body.classList.toggle("bare", on);
+    hideBtn.setAttribute("aria-checked", on ? "true" : "false");
+    remember(BKEY, on ? "1" : "");
+  }
+  hideBtn.addEventListener("click", function(){
+    setBare(hideBtn.getAttribute("aria-checked") !== "true");
+  });
+  /* ---------- connect sheet ---------- */
+
+  var sheet = document.getElementById("sheet");
+  var tokenEl = document.getElementById("token");
+  var okBtn = document.getElementById("sheetOk");
+
+  function readySheet(){
+    okBtn.className = "circbtn ok" + (tokenEl.value.trim() ? " ready" : "");
+  }
+  function openSheet(){
     tokenEl.value = "";
-    melde("verbinde ...");
-    pushen();
+    readySheet();
+    sheet.classList.add("open");
+    setTimeout(function(){ tokenEl.focus(); }, 60);
+  }
+  function closeSheet(){
+    sheet.classList.remove("open");
+    tokenEl.value = "";
+    readySheet();
+  }
+  document.getElementById("rowConnect").addEventListener("click", openSheet);
+  document.getElementById("sheetClose").addEventListener("click", closeSheet);
+  tokenEl.addEventListener("input", readySheet);
+  tokenEl.addEventListener("keydown", function(e){ if (e.key === "Enter") okBtn.click(); });
+  okBtn.addEventListener("click", function(){
+    var t = tokenEl.value.trim();
+    if (!t) return;
+    remember(TKEY, t);
+    closeSheet();
+    say("Connecting ...");
+    push();
   });
-  document.getElementById("pushNow").addEventListener("click", function(){ pushen(); });
-  document.getElementById("pullNow").addEventListener("click", function(){ holen(false); });
-  document.getElementById("forget").addEventListener("click", function(){
-    merken(TKEY, ""); merken(GKEY, "");
-    zeigeGist();
-    ausStatus();
-  });
-  document.getElementById("download").addEventListener("click", function(){
-    var b = new Blob([inhalt()], { type: "application/json" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(b);
-    a.download = "habitgrid-" + fmt(new Date()) + ".json";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  });
+
+  /* ---------- start ---------- */
 
   load();
+  if (stored(BKEY)) setBare(true);
   paintAll();
-  zeigeGist();
-  if (token()) { melde("verbinde ..."); holen(true); } else { ausStatus(); }
+  if (stored(TKEY)) { say("Connecting ..."); pull(true); } else { say("Backup off"); }
 })();
 </script>
 
 <script>
-/* Offline-Betrieb: laedt immer die frische Fassung, faellt ohne Netz auf die letzte zurueck. */
+/* Offline use: always loads the fresh version, falls back to the last one without a network. */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function(){
     navigator.serviceWorker.register("sw.js").catch(function(){});
