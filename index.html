@@ -626,9 +626,18 @@
 
     if (!animate || !v.play) { swImg.src = on ? "toggle-on.jpg" : "toggle-off.jpg"; return; }
 
+    var target = on ? "toggle-on.jpg" : "toggle-off.jpg";
+
+    /* Swap the still halfway through the clip, so that hiding the clip at the
+       end reveals a picture that already matches. Swapping afterwards showed
+       one frame of the old state. */
+    function swapStill(){
+      if (mine !== animToken) return;
+      swImg.src = target;
+    }
     function settle(){
       if (mine !== animToken) return;
-      swImg.src = on ? "toggle-on.jpg" : "toggle-off.jpg";
+      swapStill();
       v.classList.remove("run");
     }
 
@@ -640,6 +649,15 @@
       started = true;
       v.classList.add("run");
       v.onended = settle;
+      /* timeupdate only fires about four times a second, so a timer set to
+         half the clip length carries the swap and timeupdate backs it up. */
+      if (v.duration) setTimeout(swapStill, v.duration * 500);
+      v.ontimeupdate = function(){
+        if (v.duration && v.currentTime >= v.duration / 2) {
+          v.ontimeupdate = null;
+          swapStill();
+        }
+      };
       var p = v.play();
       if (p && p.catch) p.catch(settle);
       animTimer = setTimeout(settle, 1600);
@@ -693,6 +711,17 @@
   });
 
   /* ---------- start ---------- */
+
+  /* Pull both clips fully into memory up front. With preload="auto" alone the
+     browser may fetch metadata only, and the first tap would start the
+     download instead of the animation. */
+  ["toggle-on.mp4", "toggle-off.mp4"].forEach(function(file, i){
+    var el = i === 0 ? vids.on : vids.off;
+    fetch(file).then(function(r){ return r.ok ? r.blob() : null; }).then(function(b){
+      if (!b) return;
+      try { el.src = URL.createObjectURL(b); el.load(); } catch (e) {}
+    }).catch(function(){});
+  });
 
   load();
   if (stored(BKEY)) setBare(true);
