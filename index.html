@@ -416,7 +416,6 @@
 
   var DOWL = ["M","T","W","T","F","S","S"];
   var DAYNAME = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-  var MONS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   var dowEl = document.getElementById("dow");
   var daysEl = document.getElementById("days");
@@ -550,7 +549,7 @@
     fillWeek(weekEls[1], ws);
     fillWeek(weekEls[2], ws + 7);
     setX(0, false);
-    dlabel.textContent = DAYNAME[selIdx % 7] + " \u2013 " + MONS[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+    dlabel.textContent = DAYNAME[selIdx % 7] + " " + fmt(d);
 
     HABITS.forEach(function(h, i){
       toggles[i].className = data[h.k][dk] ? "on" : "";
