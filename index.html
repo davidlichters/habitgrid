@@ -32,6 +32,11 @@
          "Helvetica Neue", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  /* No long press menu on any picture: no Save to Photos, no Copy, no drag. */
+  img,video{
+    -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
+    -webkit-user-drag:none;pointer-events:none;
+  }
   body{
     margin:0;
     background:var(--white);
@@ -66,21 +71,33 @@
     padding-bottom:.06em;
   }
 
-  .daynav{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px}
-  .daynav b{
-    font-size:13px;font-weight:600;color:var(--grey);letter-spacing:.01em;
-    font-variant-numeric:tabular-nums;min-width:88px;text-align:center;
+  .dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin-top:16px}
+  .dow span{
+    text-align:center;font-size:13px;font-weight:700;color:#000;
+    letter-spacing:.02em;
   }
-  .navbtn{
-    width:28px;height:28px;border-radius:50%;flex:0 0 auto;
-    border:1px solid var(--line);background:var(--white);color:var(--ink);
-    cursor:pointer;display:grid;place-items:center;font-size:14px;line-height:1;
-    font-family:inherit;padding:0;touch-action:manipulation;
-    transition:border-color .2s ease;
+  .dow span.we{color:#8E8E93}
+  .days{
+    display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin-top:6px;
+    touch-action:pan-y;user-select:none;-webkit-user-select:none;
   }
-  .navbtn:active{border-color:var(--grey)}
-  .navbtn[disabled]{opacity:.28;cursor:default}
-  .navbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .days button{
+    appearance:none;background:none;border:0;padding:0;margin:0;
+    font-family:inherit;font-size:30px;font-weight:400;letter-spacing:-.02em;
+    color:#000;cursor:pointer;display:grid;place-items:center;height:54px;
+    font-variant-numeric:tabular-nums;touch-action:pan-y;
+  }
+  .days button .n{
+    display:grid;place-items:center;width:100%;max-width:54px;aspect-ratio:1;
+    border-radius:50%;
+  }
+  .days button.future{color:#C7C7CC;cursor:default}
+  .days button.sel .n{background:#000;color:#fff}
+  .days button:focus-visible{outline:2px solid var(--blue);outline-offset:-4px;border-radius:50%}
+  .dlabel{
+    margin-top:10px;text-align:center;font-size:17px;font-weight:700;
+    letter-spacing:-.02em;color:#000;
+  }
 
   .letters{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:16px}
   .letters span{
@@ -285,13 +302,9 @@
   </div>
 
     <div class="menubar" id="menubar">
-      <div class="daynav">
-        <button class="navbtn" id="prevW" aria-label="One week back">&#171;</button>
-        <button class="navbtn" id="prev" aria-label="One day back">&#8249;</button>
-        <b id="dlabel"></b>
-        <button class="navbtn" id="next" aria-label="One day forward">&#8250;</button>
-        <button class="navbtn" id="nextW" aria-label="One week forward">&#187;</button>
-      </div>
+      <div class="dow" id="dow"></div>
+      <div class="days" id="days"></div>
+      <div class="dlabel" id="dlabel"></div>
       <div class="letters" id="letters"></div>
       <div class="today" id="today"></div>
     </div>
@@ -397,6 +410,61 @@
 
   /* ---------- day bar ---------- */
 
+  var DOWL = ["M","T","W","T","F","S","S"];
+  var DAYNAME = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  var MONS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  var dowEl = document.getElementById("dow");
+  var daysEl = document.getElementById("days");
+  var dayBtns = [];
+
+  for (var q = 0; q < 7; q++) {
+    var sp = document.createElement("span");
+    sp.textContent = DOWL[q];
+    if (q >= 5) sp.className = "we";
+    dowEl.appendChild(sp);
+
+    var db = document.createElement("button");
+    db.type = "button";
+    var nn = document.createElement("span");
+    nn.className = "n";
+    db.appendChild(nn);
+    daysEl.appendChild(db);
+    dayBtns.push(db);
+    (function(slot, btn){
+      btn.addEventListener("click", function(){
+        if (dragged) return;                       /* a swipe is not a tap */
+        var idx = weekStartIdx() + slot;
+        if (idx < 0 || idx > maxIdx) return;       /* nothing in the future */
+        selIdx = idx;
+        paintAll();
+      });
+    })(q, db);
+  }
+
+  function weekStartIdx(){ return selIdx - (selIdx % 7); }
+
+  /* Swiping across the numbers moves a whole week. */
+  var startX = 0, startY = 0, dragged = false, tracking = false;
+  daysEl.addEventListener("pointerdown", function(e){
+    tracking = true; dragged = false; startX = e.clientX; startY = e.clientY;
+  });
+  daysEl.addEventListener("pointermove", function(e){
+    if (!tracking) return;
+    if (Math.abs(e.clientX - startX) > 12 && Math.abs(e.clientX - startX) > Math.abs(e.clientY - startY)) dragged = true;
+  });
+  function endDrag(e){
+    if (!tracking) return;
+    tracking = false;
+    var dx = e.clientX - startX;
+    if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(e.clientY - startY)) {
+      jump(dx < 0 ? 7 : -7);
+    }
+    setTimeout(function(){ dragged = false; }, 0);
+  }
+  daysEl.addEventListener("pointerup", endDrag);
+  daysEl.addEventListener("pointercancel", function(){ tracking = false; dragged = false; });
+
   var lettersEl = document.getElementById("letters");
   var todayEl = document.getElementById("today");
   var dlabel = document.getElementById("dlabel");
@@ -425,11 +493,20 @@
 
   function paintTop(){
     var d = selDate(), dk = key(d);
-    dlabel.textContent = selIdx === todayIdx ? "Today" : fmt(d);
-    document.getElementById("prev").disabled = selIdx <= 0;
-    document.getElementById("prevW").disabled = selIdx <= 0;
-    document.getElementById("next").disabled = selIdx >= maxIdx;
-    document.getElementById("nextW").disabled = selIdx >= maxIdx;
+
+    var ws = weekStartIdx();
+    for (var i2 = 0; i2 < 7; i2++) {
+      var idx = ws + i2;
+      var dd = addDays(START, idx);
+      var b2 = dayBtns[i2];
+      b2.firstChild.textContent = idx >= 0 && idx < CELLS ? dd.getDate() : "";
+      var cls = idx > todayIdx ? "future" : "";
+      if (idx === selIdx) cls += (cls ? " " : "") + "sel";
+      b2.className = cls;
+      b2.disabled = idx > maxIdx || idx < 0;
+    }
+    dlabel.textContent = DAYNAME[selIdx % 7] + " \u2013 " + MONS[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+
     HABITS.forEach(function(h, i){
       toggles[i].className = data[h.k][dk] ? "on" : "";
       toggles[i].setAttribute("aria-pressed", data[h.k][dk] ? "true" : "false");
@@ -489,10 +566,6 @@
     var v = Math.max(0, Math.min(maxIdx, selIdx + n));
     if (v !== selIdx) { selIdx = v; paintAll(); }
   }
-  document.getElementById("prevW").addEventListener("click", function(){ jump(-7); });
-  document.getElementById("prev").addEventListener("click", function(){ jump(-1); });
-  document.getElementById("next").addEventListener("click", function(){ jump(1); });
-  document.getElementById("nextW").addEventListener("click", function(){ jump(7); });
 
   /* ---------- backup in a secret GitHub gist ---------- */
 
@@ -730,6 +803,11 @@
       if (!b) return;
       try { el.src = URL.createObjectURL(b); el.load(); } catch (e) {}
     }).catch(function(){});
+  });
+
+  /* Backstop for browsers that ignore -webkit-touch-callout. */
+  document.addEventListener("contextmenu", function(e){
+    if (e.target && (e.target.tagName === "IMG" || e.target.tagName === "VIDEO")) e.preventDefault();
   });
 
   load();
