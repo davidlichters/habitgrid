@@ -146,7 +146,7 @@
     appearance:none;background:none;border:0;padding:6px;margin:0;cursor:pointer;
     flex:0 0 auto;line-height:0;touch-action:manipulation;
   }
-  .info svg{width:21px;height:21px;stroke:#0A84FF;stroke-width:1.6;fill:none}
+  .info img{width:21px;height:21px;display:block}
   .info:active{opacity:.45}
   .info:focus-visible{outline:2px solid var(--blue);outline-offset:0;border-radius:50%}
   .note{
@@ -249,7 +249,7 @@
           <img class="ico" src="ico-connect.jpg" alt="">
           <span>Connect</span>
         </button>
-        <button class="info" type="button" data-note="nConnect" aria-label="About Connect"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
+        <button class="info" type="button" data-note="nConnect" aria-label="About Connect"><img src="ico-info.png" alt=""></button>
       </div>
       <p class="note" id="nConnect"><b>Turns the backup on.</b> Paste a GitHub token and every tap is saved to a secret gist in your own GitHub, from then on by itself. Get the token at github.com/settings/tokens, classic token, tick only the <b>gist</b> scope. It is stored on this iPhone and sent to GitHub, nowhere else.</p>
 
@@ -258,7 +258,7 @@
           <img class="ico" src="ico-disconnect.jpg" alt="">
           <span>Disconnect</span>
         </button>
-        <button class="info" type="button" data-note="nDisconnect" aria-label="About Disconnect"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
+        <button class="info" type="button" data-note="nDisconnect" aria-label="About Disconnect"><img src="ico-info.png" alt=""></button>
       </div>
       <p class="note" id="nDisconnect"><b>Turns the backup off.</b> The token is deleted from this iPhone and nothing is saved to GitHub any more. Your ticks stay on this iPhone and the copy already on GitHub is left untouched.</p>
 
@@ -267,7 +267,7 @@
           <img class="ico" src="ico-refresh.jpg" alt="">
           <span>Refresh</span>
         </button>
-        <button class="info" type="button" data-note="nRefresh" aria-label="About Refresh"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
+        <button class="info" type="button" data-note="nRefresh" aria-label="About Refresh"><img src="ico-info.png" alt=""></button>
       </div>
       <p class="note" id="nRefresh"><b>Pulls the copy from GitHub.</b> If the copy is newer than what is on this iPhone, it replaces what you see. This is how you get your ticks back on a new phone: connect with the same token, then Refresh.</p>
 
@@ -276,7 +276,7 @@
           <img class="ico" src="ico-share.jpg" alt="">
           <span>Share</span>
         </button>
-        <button class="info" type="button" data-note="nShare" aria-label="About Share"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
+        <button class="info" type="button" data-note="nShare" aria-label="About Share"><img src="ico-info.png" alt=""></button>
       </div>
       <p class="note" id="nShare"><b>Sends the link to this app.</b> Opens the iPhone share sheet with WhatsApp in it, so you can send the link to a chat. If the share sheet is not available, WhatsApp opens straight away with the link ready to send. Nobody who opens the link sees your ticks, they get an empty grid on their own phone.</p>
 
