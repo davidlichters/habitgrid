@@ -416,15 +416,24 @@
   }
   function inhalt(){ return JSON.stringify({ updatedAt: updatedAt, days: data }, null, 1); }
 
+  function hatDaten(){
+    for (var i = 0; i < HABITS.length; i++) {
+      for (var k in data[HABITS[i].k]) { if (k) return true; }
+    }
+    return false;
+  }
+  /* Ohne Schluessel warnen, sobald wirklich etwas zu verlieren ist. */
+  function ausStatus(){ melde("Sicherung aus", hatDaten()); }
+
   function planPush(){
-    if (!token()) return;
+    if (!token()) { ausStatus(); return; }
     melde("sichert ...");
     clearTimeout(pushTimer);
     pushTimer = setTimeout(pushen, 1200);
   }
 
   function pushen(){
-    if (!token()) { melde("Sicherung aus"); return Promise.resolve(); }
+    if (!token()) { ausStatus(); return Promise.resolve(); }
     if (laeuft) { nochmal = true; return Promise.resolve(); }
     laeuft = true;
     var id = gistId();
@@ -453,7 +462,7 @@
 
   function holen(beimStart){
     var id = gistId();
-    if (!token()) { melde("Sicherung aus"); return Promise.resolve(); }
+    if (!token()) { ausStatus(); return Promise.resolve(); }
     if (!id) { return pushen(); }
     return fetch(API + "/gists/" + id, { headers: kopf(), cache: "no-store" })
       .then(function(r){
@@ -503,7 +512,7 @@
   document.getElementById("forget").addEventListener("click", function(){
     merken(TKEY, ""); merken(GKEY, "");
     zeigeGist();
-    melde("Sicherung aus");
+    ausStatus();
   });
   document.getElementById("download").addEventListener("click", function(){
     var b = new Blob([inhalt()], { type: "application/json" });
@@ -518,7 +527,7 @@
   load();
   paintAll();
   zeigeGist();
-  if (token()) { melde("verbinde ..."); holen(true); } else { melde("Sicherung aus"); }
+  if (token()) { melde("verbinde ..."); holen(true); } else { ausStatus(); }
 })();
 </script>
 
