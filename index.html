@@ -549,7 +549,7 @@
     fillWeek(weekEls[1], ws);
     fillWeek(weekEls[2], ws + 7);
     setX(0, false);
-    dlabel.textContent = DAYNAME[selIdx % 7] + " " + fmt(d);
+    dlabel.textContent = DAYNAME[selIdx % 7] + " \u2013 " + fmt(d);
 
     HABITS.forEach(function(h, i){
       toggles[i].className = data[h.k][dk] ? "on" : "";
