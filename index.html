@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HabitGrid</title>
+
+<!-- Vollbild auf dem Homescreen, keine Safari-Leiste -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="HabitGrid">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<style>
+  :root{
+    --white:#FFFFFF;
+    --ink:#1D1D1F;
+    --grey:#6E6E73;
+    --line:#D2D2D7;
+    --fill:#F5F5F7;
+    --blue:#0071E3;
+    --g-full:linear-gradient(96deg,#5AC8FA 0%,#5E5CE6 34%,#D63AD0 67%,#FF6B2C 100%);
+    --sf:-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+         "Helvetica Neue", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;
+    background:var(--white);
+    color:var(--ink);
+    font-family:var(--sf);
+    font-size:16px;
+    line-height:1.47;
+    letter-spacing:-.01em;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding-bottom:calc(30px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:0 16px}
+
+  /* ---------- Tagesleiste ---------- */
+  .top{
+    position:sticky;top:0;z-index:5;background:var(--white);
+    padding:calc(14px + env(safe-area-inset-top)) 0 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .mark{
+    margin:0;font-size:26px;font-weight:700;
+    letter-spacing:-.035em;line-height:1.04;
+  }
+  .mark span{
+    background-image:var(--g-full);
+    -webkit-background-clip:text;background-clip:text;
+    color:transparent;-webkit-text-fill-color:transparent;
+    padding-bottom:.06em;
+  }
+  .daynav{display:flex;align-items:center;gap:10px}
+  .daynav b{
+    font-size:13px;font-weight:600;color:var(--grey);letter-spacing:.01em;
+    font-variant-numeric:tabular-nums;min-width:88px;text-align:center;
+  }
+  .navbtn{
+    width:28px;height:28px;border-radius:50%;flex:0 0 auto;
+    border:1px solid var(--line);background:var(--white);color:var(--ink);
+    cursor:pointer;display:grid;place-items:center;font-size:14px;line-height:1;
+    font-family:inherit;padding:0;touch-action:manipulation;
+    transition:border-color .2s ease;
+  }
+  .navbtn:active{border-color:var(--grey)}
+  .navbtn[disabled]{opacity:.28;cursor:default}
+  .navbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+  .letters{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:16px;
+  }
+  .letters span{
+    text-align:center;font-size:15px;font-weight:600;letter-spacing:-.01em;
+    color:var(--grey);
+  }
+  .today{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px;
+  }
+  .today button{
+    appearance:none;aspect-ratio:1;width:100%;border-radius:50%;cursor:pointer;
+    border:1.5px solid var(--line);background:var(--white);padding:0;
+    transition:transform .14s ease,background-color .14s ease,border-color .14s ease;
+    touch-action:manipulation;
+  }
+  .today button.on{background:var(--c);border-color:var(--c)}
+  .today button:active{transform:scale(.9)}
+  .today button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .stamp{
+    margin-top:11px;text-align:center;font-size:12px;color:var(--grey);
+    letter-spacing:.01em;font-variant-numeric:tabular-nums;
+  }
+  .stamp b{color:var(--ink);font-weight:600}
+
+  /* ---------- Raster ---------- */
+  .cards{display:flex;flex-direction:column;gap:16px;margin-top:18px}
+  .card{display:flex;flex-direction:column;gap:9px}
+  .head{display:flex;align-items:center;gap:10px;height:20px}
+  .glyph{
+    font-size:19px;font-weight:600;letter-spacing:-.02em;color:var(--c);
+    line-height:1;
+  }
+  .card:last-child .grid{margin-bottom:4px}
+  .streak{
+    margin-left:auto;font-size:12.5px;line-height:1;color:var(--grey);
+    font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.01em;
+  }
+  .streak b{color:var(--ink);font-weight:600}
+  .grid{
+    display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;
+    grid-auto-columns:1fr;gap:1.5px;
+  }
+  .grid div{aspect-ratio:1;border-radius:1.5px;background:var(--c);opacity:.16}
+  .grid div.on{opacity:1}
+  .grid div.now{box-shadow:0 0 0 1.5px var(--ink);opacity:1;background:var(--white)}
+  .grid div.now.on{background:var(--c)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  /* ---------- Sicherung ---------- */
+  .sync{
+    margin-top:26px;padding-top:14px;border-top:1px solid var(--line);
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .syncbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .status{font-size:12px;color:var(--grey);letter-spacing:.01em;font-variant-numeric:tabular-nums}
+  .status.warn{color:#FF375F}
+  .pill{
+    appearance:none;background:var(--white);border:1px solid var(--line);color:var(--grey);
+    border-radius:999px;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;
+    font-family:inherit;letter-spacing:-.005em;touch-action:manipulation;flex:0 0 auto;
+  }
+  .pill:active{border-color:var(--grey);color:var(--ink)}
+  .pill:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .panel{display:none;flex-direction:column;gap:10px;background:var(--fill);border-radius:12px;padding:14px}
+  .panel.open{display:flex}
+  .panel p{margin:0;font-size:12.5px;color:var(--grey);line-height:1.45}
+  .panel a{color:var(--blue);text-decoration:none}
+  .panel input{
+    appearance:none;width:100%;border:1px solid var(--line);background:var(--white);
+    border-radius:10px;padding:10px 12px;font-family:inherit;font-size:15px;color:var(--ink);
+  }
+  .panel input:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:transparent}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row .pill{background:var(--white)}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div class="bar">
+      <h1 class="mark">Habit<span>Grid</span></h1>
+      <div class="daynav">
+        <button class="navbtn" id="prev" aria-label="Tag zur&#252;ck">&#8249;</button>
+        <b id="dlabel"></b>
+        <button class="navbtn" id="next" aria-label="Tag vor">&#8250;</button>
+      </div>
+    </div>
+    <div class="letters" id="letters"></div>
+    <div class="today" id="today"></div>
+    <div class="stamp" id="stamp"></div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="sync">
+    <div class="syncbar">
+      <span class="status" id="status">Sicherung aus</span>
+      <button class="pill" id="toggleP" type="button">Sicherung</button>
+    </div>
+    <div class="panel" id="panel">
+      <p>Die H&auml;kchen liegen auf diesem Ger&auml;t. Mit einem GitHub-Schl&uuml;ssel
+         legt die App zus&auml;tzlich eine geheime Kopie in deinem GitHub ab, nach jedem Tippen.</p>
+      <p>Schl&uuml;ssel holen: <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=HabitGrid" target="_blank" rel="noopener">github.com/settings/tokens</a>
+         &rarr; nur den Haken <b>gist</b> setzen &rarr; erzeugen &rarr; hier einsetzen.
+         Der Schl&uuml;ssel bleibt auf diesem Ger&auml;t und geht nur an GitHub.</p>
+      <input id="token" type="password" inputmode="text" autocomplete="off" autocapitalize="off"
+             autocorrect="off" spellcheck="false" placeholder="ghp_...">
+      <div class="row">
+        <button class="pill" id="connect" type="button">Verbinden</button>
+        <button class="pill" id="pushNow" type="button">Jetzt sichern</button>
+        <button class="pill" id="pullNow" type="button">Von GitHub holen</button>
+        <button class="pill" id="download" type="button">Als Datei sichern</button>
+        <button class="pill" id="forget" type="button">Schl&uuml;ssel l&ouml;schen</button>
+      </div>
+      <p id="gistline"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var KEY = "habitgrid.v3";
+  var KEY_ALT = "habitgrid.v2";       /* Fassung ohne Zeitstempel */
+  var TKEY = "habitgrid.token";
+  var GKEY = "habitgrid.gist";
+  var updatedAt = 0;
+  var WEEKS = 51;
+  var CELLS = WEEKS * 7;              /* 357 */
+
+  /* Festes Jahresraster: Zelle 1 = Montag, 05.01.2026 (R1 C1).
+     Zelle 357 = Sonntag, 27.12.2026 (R7 C51).
+     Reihe = Wochentag (R1 Montag ... R7 Sonntag), Spalte = Kalenderwoche. */
+  var START = new Date(2026, 0, 5);
+
+  /* Feste Gewohnheiten. Nicht aenderbar. */
+  var HABITS = [
+    { k: "S", c: "#FF7E00" },
+    { k: "F", c: "#FF375F" },
+    { k: "M", c: "#D63AD0" },
+    { k: "B", c: "#5E5CE6" },
+    { k: "D", c: "#0A84FF" },
+    { k: "T", c: "#32ADE6" },
+    { k: "G", c: "#30D158" }
+  ];
+
+
+  var data = {};
+  HABITS.forEach(function(h){ data[h.k] = {}; });
+
+  function uebernehmen(o){
+    if (!o || typeof o !== "object") return;
+    HABITS.forEach(function(h){
+      data[h.k] = (o[h.k] && typeof o[h.k] === "object") ? o[h.k] : {};
+    });
+  }
+  function load(){
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && p.days) { uebernehmen(p.days); updatedAt = p.updatedAt || 0; return; }
+      }
+      var frueher = localStorage.getItem(KEY_ALT);
+      if (frueher) { uebernehmen(JSON.parse(frueher)); updatedAt = 1; save(); }
+    } catch (e) {}
+  }
+  function save(){
+    try { localStorage.setItem(KEY, JSON.stringify({ updatedAt: updatedAt, days: data })); } catch (e) {}
+  }
+
+  function d2(n){ return (n < 10 ? "0" : "") + n; }
+  /* Einheitliches Anzeigeformat: 05-09-2026 */
+  function fmt(d){ return d2(d.getDate()) + "-" + d2(d.getMonth()+1) + "-" + d.getFullYear(); }
+  function key(d){ return d.getFullYear() + "-" + d2(d.getMonth()+1) + "-" + d2(d.getDate()); }
+  function plain(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function addDays(d, n){ var x = plain(d); x.setDate(x.getDate() + n); return x; }
+  function index(d){ return Math.round((plain(d) - START) / 86400000); }
+
+  /* Das echte Datum des Geraets. */
+  var today = plain(new Date());
+  var todayKey = key(today);
+  var todayIdx = index(today);
+
+  /* Bis wohin man eintragen darf: heute, aber nie ueber das Raster hinaus. */
+  var maxIdx = Math.min(todayIdx, CELLS - 1);
+  var selIdx = Math.max(0, Math.min(todayIdx, CELLS - 1));
+
+  function selDate(){ return addDays(START, selIdx); }
+
+  function streak(k){
+    var n = 0, d = today;
+    if (!data[k][todayKey]) d = addDays(today, -1);
+    while (data[k][key(d)]) { n++; d = addDays(d, -1); }
+    return n;
+  }
+
+  /* ---------- Tagesleiste ---------- */
+
+  var lettersEl = document.getElementById("letters");
+  var todayEl = document.getElementById("today");
+  var dlabel = document.getElementById("dlabel");
+  var stamp = document.getElementById("stamp");
+  var toggles = [];
+
+  HABITS.forEach(function(h){
+    var s = document.createElement("span");
+    s.textContent = h.k;
+    lettersEl.appendChild(s);
+
+    var b = document.createElement("button");
+    b.type = "button";
+    b.style.setProperty("--c", h.c);
+    b.setAttribute("aria-label", "Gewohnheit " + h.k);
+    b.addEventListener("click", function(){
+      var dk = key(selDate());
+      if (data[h.k][dk]) delete data[h.k][dk]; else data[h.k][dk] = 1;
+      updatedAt = Date.now();
+      save();
+      paintAll();
+      planPush();
+    });
+    todayEl.appendChild(b);
+    toggles.push(b);
+  });
+
+  function paintTop(){
+    var d = selDate(), dk = key(d);
+    dlabel.textContent = selIdx === todayIdx ? "Heute" : fmt(d);
+    document.getElementById("prev").disabled = selIdx <= 0;
+    document.getElementById("next").disabled = selIdx >= maxIdx;
+
+    stamp.textContent = fmt(d);
+
+    HABITS.forEach(function(h, i){
+      toggles[i].className = data[h.k][dk] ? "on" : "";
+      toggles[i].setAttribute("aria-pressed", data[h.k][dk] ? "true" : "false");
+    });
+  }
+
+  /* ---------- 7 Raster, je 7 x 51, Spalte fuer Spalte ---------- */
+
+  var cardsEl = document.getElementById("cards");
+  var grids = [];
+
+  HABITS.forEach(function(h){
+    var card = document.createElement("div");
+    card.className = "card";
+    card.style.setProperty("--c", h.c);
+
+    var head = document.createElement("div");
+    head.className = "head";
+    var glyph = document.createElement("div");
+    glyph.className = "glyph";
+    glyph.textContent = h.k;
+    var st = document.createElement("div");
+    st.className = "streak";
+    head.appendChild(glyph);
+    head.appendChild(st);
+    card.appendChild(head);
+
+    var grid = document.createElement("div");
+    grid.className = "grid";
+    var cells = [];
+    for (var c = 0; c < WEEKS; c++) {
+      for (var r = 0; r < 7; r++) {
+        var i = c * 7 + r;                     /* R(r+1) C(c+1) */
+        var cell = document.createElement("div");
+        var d = addDays(START, i);
+        cell.title = fmt(d);
+        grid.appendChild(cell);
+        cells.push({ el: cell, k: key(d), i: i });
+      }
+    }
+    card.appendChild(grid);
+    cardsEl.appendChild(card);
+
+    grids.push({ h: h, cells: cells, st: st });
+  });
+
+  function paintGrids(){
+    grids.forEach(function(g){
+      var days = data[g.h.k];
+      for (var j = 0; j < g.cells.length; j++) {
+        var cc = g.cells[j];
+        var cls = days[cc.k] ? "on" : "";
+        if (cc.i === selIdx) cls = cls ? cls + " now" : "now";
+        cc.el.className = cls;
+      }
+      var n = streak(g.h.k);
+      g.st.innerHTML = n > 0 ? "<b>" + n + "</b> " + (n === 1 ? "Tag" : "Tage") : "";
+    });
+  }
+
+  function paintAll(){ paintTop(); paintGrids(); }
+
+  document.getElementById("prev").addEventListener("click", function(){
+    if (selIdx > 0) { selIdx--; paintAll(); }
+  });
+  document.getElementById("next").addEventListener("click", function(){
+    if (selIdx < maxIdx) { selIdx++; paintAll(); }
+  });
+
+  /* ---------- Sicherung in einem geheimen GitHub-Gist ---------- */
+
+  var API = "https://api.github.com";
+  var DATEI = "habitgrid.json";
+  var pushTimer = null, laeuft = false, nochmal = false;
+
+  function token(){ try { return localStorage.getItem(TKEY) || ""; } catch (e) { return ""; } }
+  function gistId(){ try { return localStorage.getItem(GKEY) || ""; } catch (e) { return ""; } }
+  function merken(k, v){ try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
+
+  var statusEl = document.getElementById("status");
+  var gistEl = document.getElementById("gistline");
+
+  function uhr(){ var d = new Date(); return d2(d.getHours()) + ":" + d2(d.getMinutes()); }
+  function melde(text, warn){
+    statusEl.textContent = text;
+    statusEl.className = warn ? "status warn" : "status";
+  }
+  function zeigeGist(){
+    var id = gistId();
+    gistEl.innerHTML = id
+      ? 'Kopie: <a href="https://gist.github.com/' + id + '" target="_blank" rel="noopener">gist.github.com/' + id.slice(0,8) + '</a>'
+      : "";
+  }
+  function kopf(){
+    return {
+      "Authorization": "Bearer " + token(),
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json"
+    };
+  }
+  function inhalt(){ return JSON.stringify({ updatedAt: updatedAt, days: data }, null, 1); }
+
+  function planPush(){
+    if (!token()) return;
+    melde("sichert ...");
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(pushen, 1200);
+  }
+
+  function pushen(){
+    if (!token()) { melde("Sicherung aus"); return Promise.resolve(); }
+    if (laeuft) { nochmal = true; return Promise.resolve(); }
+    laeuft = true;
+    var id = gistId();
+    var body = { description: "HabitGrid", files: {} };
+    body.files[DATEI] = { content: inhalt() };
+    if (!id) body.public = false;
+    return fetch(id ? API + "/gists/" + id : API + "/gists", {
+      method: id ? "PATCH" : "POST", headers: kopf(), body: JSON.stringify(body)
+    }).then(function(r){
+      if (r.status === 401) throw new Error("Schluessel ungueltig");
+      if (r.status === 403) throw new Error("Schluessel darf keine Gists");
+      if (r.status === 404 && id) { merken(GKEY, ""); throw new Error("Kopie weg, nochmal tippen"); }
+      if (!r.ok) throw new Error("GitHub " + r.status);
+      return r.json();
+    }).then(function(j){
+      if (j && j.id) merken(GKEY, j.id);
+      zeigeGist();
+      melde("gesichert " + uhr());
+    }).catch(function(e){
+      melde(e.message || "nicht gesichert", true);
+    }).then(function(){
+      laeuft = false;
+      if (nochmal) { nochmal = false; pushen(); }
+    });
+  }
+
+  function holen(beimStart){
+    var id = gistId();
+    if (!token()) { melde("Sicherung aus"); return Promise.resolve(); }
+    if (!id) { return pushen(); }
+    return fetch(API + "/gists/" + id, { headers: kopf(), cache: "no-store" })
+      .then(function(r){
+        if (r.status === 401) throw new Error("Schluessel ungueltig");
+        if (!r.ok) throw new Error("GitHub " + r.status);
+        return r.json();
+      })
+      .then(function(j){
+        var f = j.files && j.files[DATEI];
+        if (!f || !f.content) throw new Error("Kopie ist leer");
+        var p = JSON.parse(f.content);
+        if (!p || !p.days) throw new Error("Kopie unlesbar");
+        if ((p.updatedAt || 0) > updatedAt) {
+          uebernehmen(p.days);
+          updatedAt = p.updatedAt || 0;
+          save();
+          paintAll();
+          melde("von GitHub geholt " + uhr());
+        } else if (beimStart) {
+          melde("gesichert " + uhr());
+        } else {
+          melde("hier ist neuer, nichts geholt");
+        }
+      })
+      .catch(function(e){ melde(e.message || "holen ging nicht", true); });
+  }
+
+  /* ---------- Bedienung ---------- */
+
+  var panel = document.getElementById("panel");
+  var tokenEl = document.getElementById("token");
+
+  document.getElementById("toggleP").addEventListener("click", function(){
+    panel.classList.toggle("open");
+    zeigeGist();
+  });
+  document.getElementById("connect").addEventListener("click", function(){
+    var t = tokenEl.value.trim();
+    if (!t) { melde("kein Schluessel eingesetzt", true); return; }
+    merken(TKEY, t);
+    tokenEl.value = "";
+    melde("verbinde ...");
+    pushen();
+  });
+  document.getElementById("pushNow").addEventListener("click", function(){ pushen(); });
+  document.getElementById("pullNow").addEventListener("click", function(){ holen(false); });
+  document.getElementById("forget").addEventListener("click", function(){
+    merken(TKEY, ""); merken(GKEY, "");
+    zeigeGist();
+    melde("Sicherung aus");
+  });
+  document.getElementById("download").addEventListener("click", function(){
+    var b = new Blob([inhalt()], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(b);
+    a.download = "habitgrid-" + fmt(new Date()) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+
+  load();
+  paintAll();
+  zeigeGist();
+  if (token()) { melde("verbinde ..."); holen(true); } else { melde("Sicherung aus"); }
+})();
+</script>
+
+<script>
+/* Offline-Betrieb: laedt immer die frische Fassung, faellt ohne Netz auf die letzte zurueck. */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
