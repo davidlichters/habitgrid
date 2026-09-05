@@ -273,9 +273,9 @@
       <p class="note" id="nShare"><b>Sends the link to this app.</b> Opens the iPhone share sheet with WhatsApp in it, so you can send the link to a chat. If the share sheet is not available, WhatsApp opens straight away with the link ready to send. Nobody who opens the link sees your ticks, they get an empty grid on their own phone.</p>
 
       <div class="row">
-        <span class="plain">Hide menu bar</span>
-        <button class="switch" id="hideBar" type="button" role="switch" aria-checked="false" aria-label="Hide menu bar">
-          <img id="swImg" src="toggle-off.jpg" alt="">
+        <span class="plain">Show menu bar</span>
+        <button class="switch" id="hideBar" type="button" role="switch" aria-checked="true" aria-label="Show menu bar">
+          <img id="swImg" src="toggle-on.jpg" alt="">
           <video id="vOn" src="toggle-on.mp4" muted playsinline preload="auto"></video>
           <video id="vOff" src="toggle-off.mp4" muted playsinline preload="auto"></video>
         </button>
@@ -618,13 +618,15 @@
   var vids = { on: document.getElementById("vOn"), off: document.getElementById("vOff") };
   var animToken = 0, animTimer = null;
 
-  function setBare(on, animate){
-    document.body.classList.toggle("bare", on);
-    hideBtn.setAttribute("aria-checked", on ? "true" : "false");
-    remember(BKEY, on ? "1" : "");
+  /* hidden = menu bar is gone. The switch shows the opposite: on means visible. */
+  function setBare(hidden, animate){
+    var showing = !hidden;
+    document.body.classList.toggle("bare", hidden);
+    hideBtn.setAttribute("aria-checked", showing ? "true" : "false");
+    remember(BKEY, hidden ? "1" : "");
 
-    var v = on ? vids.on : vids.off;
-    var other = on ? vids.off : vids.on;
+    var v = showing ? vids.on : vids.off;
+    var other = showing ? vids.off : vids.on;
 
     /* A newer tap always wins over a clip that is still running. */
     var mine = ++animToken;
@@ -632,9 +634,9 @@
     other.classList.remove("run");
     try { other.pause(); } catch (e) {}
 
-    if (!animate || !v.play) { swImg.src = on ? "toggle-on.jpg" : "toggle-off.jpg"; return; }
+    var target = showing ? "toggle-on.jpg" : "toggle-off.jpg";
 
-    var target = on ? "toggle-on.jpg" : "toggle-off.jpg";
+    if (!animate || !v.play) { swImg.src = target; return; }
 
     /* Swap the still halfway through the clip, so that hiding the clip at the
        end reveals a picture that already matches. Swapping afterwards showed
@@ -683,7 +685,8 @@
   }
 
   hideBtn.addEventListener("click", function(){
-    setBare(hideBtn.getAttribute("aria-checked") !== "true", true);
+    /* checked means the bar is showing, so a tap hides it */
+    setBare(hideBtn.getAttribute("aria-checked") === "true", true);
   });
   /* ---------- connect sheet ---------- */
 
@@ -730,7 +733,7 @@
   });
 
   load();
-  if (stored(BKEY)) setBare(true);
+  setBare(!!stored(BKEY), false);
   paintAll();
   if (stored(TKEY)) { say("Connecting ..."); pull(true); } else { say("Backup off"); }
 })();
