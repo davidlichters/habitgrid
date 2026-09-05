@@ -1,8 +1,8 @@
 /* Netz zuerst, ohne Netz die letzte gespeicherte Fassung. */
-var CACHE = "habitgrid-v7";
+var CACHE = "habitgrid-v8";
 var FILES = ["./", "./index.html", "./icon.png", "./manifest.webmanifest",
              "./ico-connect.jpg", "./ico-disconnect.jpg", "./ico-refresh.jpg", "./ico-share.jpg", "./ico-info.png",
-             "./toggle-on.jpg", "./toggle-off.jpg"];
+             "./toggle-on.jpg", "./toggle-off.jpg", "./toggle-on.mp4", "./toggle-off.mp4"];
 
 self.addEventListener("install", function(e){
   self.skipWaiting();
