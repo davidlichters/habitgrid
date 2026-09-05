@@ -192,9 +192,8 @@
   }
   .hit:active{opacity:.35;background:#000}
   .hit:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-  .hero{display:grid;place-items:center;margin:44px 0 34px}
-  .hero svg{width:74px;height:74px;stroke:#0A84FF;stroke-width:2;fill:none;
-            stroke-linecap:round;stroke-linejoin:round}
+  .hero{display:grid;place-items:center;margin:34px 0 26px}
+  .hero img{width:300px;max-width:86%;height:auto;display:block}
   .sheet h2{
     margin:0;font-size:22px;font-weight:700;color:#000;
     letter-spacing:-.02em;line-height:1.24;
@@ -205,7 +204,7 @@
   }
   .pill{
     display:flex;align-items:center;gap:12px;margin-top:30px;
-    background:#fff;border-radius:26px;padding:16px 22px;
+    background:#fff;border-radius:999px;padding:16px 22px;
   }
   .pilllabel{
     flex:0 0 auto;font-size:17px;color:#000;letter-spacing:-.02em;
@@ -215,7 +214,6 @@
     font-family:inherit;font-size:17px;color:#000;letter-spacing:-.02em;
   }
   .sheet input:focus{outline:none}
-  .pill:has(input:focus-visible){box-shadow:0 0 0 2px var(--blue)}
   .sheet .foot{
     margin:16px 0 0;font-size:13.5px;line-height:1.42;color:var(--ios-grey);
     letter-spacing:-.005em;
@@ -305,9 +303,7 @@
   </div>
 
   <div class="pad">
-  <div class="hero">
-    <svg viewBox="0 0 24 24"><path d="M20 17.6A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 15.25"/><path d="M12 12.5V21"/><path d="M8.4 16.1L12 12.5l3.6 3.6"/></svg>
-  </div>
+  <div class="hero"><img src="cloud.jpg" alt=""></div>
 
   <h2>Connect to GitHub</h2>
   <p class="sub">Enter your token to back up your ticks.</p>
