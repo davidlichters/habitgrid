@@ -177,25 +177,21 @@
 
   /* ---------- iOS style sheet ---------- */
   .sheet{
-    display:none;position:fixed;inset:0;z-index:50;background:var(--ios-ground);
-    padding:calc(14px + env(safe-area-inset-top)) 22px calc(20px + env(safe-area-inset-bottom));
+    display:none;position:fixed;inset:0;z-index:50;background:#F2F1F5;
+    padding:0 0 calc(20px + env(safe-area-inset-bottom));
     overflow-y:auto;
   }
   .sheet.open{display:block}
-  .sheetbar{display:flex;align-items:center;justify-content:space-between}
-  .circbtn{
-    appearance:none;border:0;padding:0;margin:0;cursor:pointer;
-    width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
-    touch-action:manipulation;
+  .sheet .pad{padding:0 22px}
+  .sheetbar{position:relative;line-height:0}
+  .sheetbar img{width:100%;height:auto;display:block}
+  .hit{
+    position:absolute;top:63%;transform:translate(-50%,-50%);
+    width:14%;aspect-ratio:1;border:0;background:none;padding:0;margin:0;
+    cursor:pointer;border-radius:50%;touch-action:manipulation;
   }
-  .circbtn svg{width:22px;height:22px;stroke-width:2.6;fill:none;
-               stroke-linecap:round;stroke-linejoin:round}
-  .close{background:#fff}
-  .close svg{stroke:#000}
-  .ok{background:#C7C7CC}
-  .ok svg{stroke:#fff}
-  .ok.ready{background:#0A84FF}
-  .circbtn:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+  .hit:active{opacity:.35;background:#000}
+  .hit:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
   .hero{display:grid;place-items:center;margin:44px 0 34px}
   .hero svg{width:74px;height:74px;stroke:#0A84FF;stroke-width:2;fill:none;
             stroke-linecap:round;stroke-linejoin:round}
@@ -207,13 +203,19 @@
     margin:0;font-size:22px;font-weight:400;color:var(--ios-grey);
     letter-spacing:-.02em;line-height:1.24;
   }
-  .sheet input{
-    appearance:none;width:100%;margin-top:30px;border:0;background:#fff;
-    border-radius:26px;padding:16px 22px;font-family:inherit;font-size:17px;
-    color:#000;letter-spacing:-.02em;
+  .pill{
+    display:flex;align-items:center;gap:12px;margin-top:30px;
+    background:#fff;border-radius:26px;padding:16px 22px;
   }
-  .sheet input::placeholder{color:#000;opacity:.32}
-  .sheet input:focus{outline:2px solid var(--blue);outline-offset:-2px}
+  .pilllabel{
+    flex:0 0 auto;font-size:17px;color:#000;letter-spacing:-.02em;
+  }
+  .sheet input{
+    appearance:none;flex:1;min-width:0;border:0;background:none;padding:0;
+    font-family:inherit;font-size:17px;color:#000;letter-spacing:-.02em;
+  }
+  .sheet input:focus{outline:none}
+  .pill:has(input:focus-visible){box-shadow:0 0 0 2px var(--blue)}
   .sheet .foot{
     margin:16px 0 0;font-size:13.5px;line-height:1.42;color:var(--ios-grey);
     letter-spacing:-.005em;
@@ -297,10 +299,12 @@
 <!-- Connect sheet -->
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Connect to GitHub">
   <div class="sheetbar">
-    <button class="circbtn close" id="sheetClose" type="button" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
-    <button class="circbtn ok" id="sheetOk" type="button" aria-label="Connect"><svg viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></svg></button>
+    <img src="sheet-bar.jpg" alt="">
+    <button class="hit" id="sheetClose" type="button" aria-label="Cancel" style="left:9%"></button>
+    <button class="hit" id="sheetOk" type="button" aria-label="Connect" style="left:90.2%"></button>
   </div>
 
+  <div class="pad">
   <div class="hero">
     <svg viewBox="0 0 24 24"><path d="M20 17.6A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 15.25"/><path d="M12 12.5V21"/><path d="M8.4 16.1L12 12.5l3.6 3.6"/></svg>
   </div>
@@ -308,10 +312,14 @@
   <h2>Connect to GitHub</h2>
   <p class="sub">Enter your token to back up your ticks.</p>
 
-  <input id="token" type="password" inputmode="text" autocomplete="off" autocapitalize="off"
-         autocorrect="off" spellcheck="false" placeholder="Token">
+  <div class="pill">
+    <span class="pilllabel">Token</span>
+    <input id="token" type="text" inputmode="text" autocomplete="off" autocapitalize="off"
+           autocorrect="off" spellcheck="false">
+  </div>
 
   <p class="foot">Create the token at github.com/settings/tokens, classic token, and tick only the gist scope. It is stored on this iPhone and sent to GitHub, nowhere else. Nobody else can read or change your ticks with the link to this app.</p>
+  </div>
 </div>
 
 <script>
@@ -683,9 +691,7 @@
   var tokenEl = document.getElementById("token");
   var okBtn = document.getElementById("sheetOk");
 
-  function readySheet(){
-    okBtn.className = "circbtn ok" + (tokenEl.value.trim() ? " ready" : "");
-  }
+  function readySheet(){ /* the tick lives inside the bar image now */ }
   function openSheet(){
     tokenEl.value = "";
     readySheet();
