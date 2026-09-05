@@ -8,4 +8,4 @@ Browserspeicher des Geraets. Optional legt die App zusaetzlich eine geheime
 Kopie in einem GitHub-Gist ab, dafuer braucht sie einen Token mit dem
 Recht `gist`, der nur auf dem Geraet gespeichert wird.
 
-Live: https://david-1-1-1.github.io/habitgrid/
+Live: https://davidlichters.github.io/habitgrid/
