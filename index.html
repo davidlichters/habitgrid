@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>HabitGrid</title>
+<title>Habit Tracker</title>
 
 <!-- Vollbild auf dem Homescreen, keine Safari-Leiste -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="HabitGrid">
+<meta name="apple-mobile-web-app-title" content="Habit Tracker">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <link rel="apple-touch-icon" href="icon.png">
@@ -50,21 +50,24 @@
     padding:calc(14px + env(safe-area-inset-top)) 0 12px;
     border-bottom:1px solid var(--line);
   }
-  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .mark{
-    margin:0;font-size:26px;font-weight:700;
-    letter-spacing:-.035em;line-height:1.04;
+  .mark{margin:0;line-height:1.04}
+  .mark button{
+    appearance:none;background:none;border:0;padding:0;margin:0;cursor:pointer;
+    font-family:inherit;font-size:26px;font-weight:700;color:var(--ink);
+    letter-spacing:-.035em;line-height:1.04;white-space:nowrap;
+    touch-action:manipulation;
   }
+  .mark button:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
   .mark span{
     background-image:var(--g-full);
     -webkit-background-clip:text;background-clip:text;
     color:transparent;-webkit-text-fill-color:transparent;
     padding-bottom:.06em;
   }
-  .daynav{display:flex;align-items:center;gap:10px}
+  .daynav{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px}
   .daynav b{
     font-size:13px;font-weight:600;color:var(--grey);letter-spacing:.01em;
-    font-variant-numeric:tabular-nums;min-width:88px;text-align:center;
+    font-variant-numeric:tabular-nums;min-width:74px;text-align:center;
   }
   .navbtn{
     width:28px;height:28px;border-radius:50%;flex:0 0 auto;
@@ -117,14 +120,7 @@
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
   /* ---------- Sicherung ---------- */
-  .sync{
-    margin-top:26px;padding-top:14px;border-top:1px solid var(--line);
-    display:flex;flex-direction:column;gap:12px;
-  }
-  .syncbar{
-    display:flex;align-items:center;justify-content:space-between;gap:12px;
-  }
-  .status{font-size:12px;color:var(--grey);letter-spacing:.01em;font-variant-numeric:tabular-nums}
+  .status{font-size:12.5px;font-weight:600;color:var(--ink);letter-spacing:.01em;font-variant-numeric:tabular-nums}
   .status.warn{color:#FF375F}
   .pill{
     appearance:none;background:var(--white);border:1px solid var(--line);color:var(--grey);
@@ -133,7 +129,7 @@
   }
   .pill:active{border-color:var(--grey);color:var(--ink)}
   .pill:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-  .panel{display:none;flex-direction:column;gap:10px;background:var(--fill);border-radius:12px;padding:14px}
+  .panel{display:none;flex-direction:column;gap:10px;background:var(--fill);border-radius:12px;padding:14px;margin-top:16px}
   .panel.open{display:flex}
   .panel p{margin:0;font-size:12.5px;color:var(--grey);line-height:1.45}
   .panel a{color:var(--blue);text-decoration:none}
@@ -148,26 +144,20 @@
 
 <div class="wrap">
   <div class="top">
-    <div class="bar">
-      <h1 class="mark">Habit<span>Grid</span></h1>
-      <div class="daynav">
-        <button class="navbtn" id="prev" aria-label="Tag zur&#252;ck">&#8249;</button>
-        <b id="dlabel"></b>
-        <button class="navbtn" id="next" aria-label="Tag vor">&#8250;</button>
-      </div>
+    <h1 class="mark"><button type="button" id="toggleP" aria-label="Sicherung">Habit <span>Tracker</span></button></h1>
+    <div class="daynav">
+      <button class="navbtn" id="prevW" aria-label="Woche zur&#252;ck">&#171;</button>
+      <button class="navbtn" id="prev" aria-label="Tag zur&#252;ck">&#8249;</button>
+      <b id="dlabel"></b>
+      <button class="navbtn" id="next" aria-label="Tag vor">&#8250;</button>
+      <button class="navbtn" id="nextW" aria-label="Woche vor">&#187;</button>
     </div>
     <div class="letters" id="letters"></div>
     <div class="today" id="today"></div>
   </div>
 
-  <div class="cards" id="cards"></div>
-
-  <div class="sync">
-    <div class="syncbar">
-      <span class="status" id="status">Sicherung aus</span>
-      <button class="pill" id="toggleP" type="button">Sicherung</button>
-    </div>
-    <div class="panel" id="panel">
+  <div class="panel" id="panel">
+      <div class="status" id="status">Sicherung aus</div>
       <p>Die H&auml;kchen liegen auf diesem Ger&auml;t. Mit einem GitHub-Schl&uuml;ssel
          legt die App zus&auml;tzlich eine geheime Kopie in deinem GitHub ab, nach jedem Tippen.</p>
       <p>Schl&uuml;ssel holen: <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=HabitGrid" target="_blank" rel="noopener">github.com/settings/tokens</a>
@@ -183,8 +173,9 @@
         <button class="pill" id="forget" type="button">Schl&uuml;ssel l&ouml;schen</button>
       </div>
       <p id="gistline"></p>
-    </div>
   </div>
+
+  <div class="cards" id="cards"></div>
 </div>
 
 <script>
@@ -290,7 +281,9 @@
     var d = selDate(), dk = key(d);
     dlabel.textContent = selIdx === todayIdx ? "Heute" : fmt(d);
     document.getElementById("prev").disabled = selIdx <= 0;
+    document.getElementById("prevW").disabled = selIdx <= 0;
     document.getElementById("next").disabled = selIdx >= maxIdx;
+    document.getElementById("nextW").disabled = selIdx >= maxIdx;
 
 
     HABITS.forEach(function(h, i){
@@ -350,12 +343,14 @@
 
   function paintAll(){ paintTop(); paintGrids(); }
 
-  document.getElementById("prev").addEventListener("click", function(){
-    if (selIdx > 0) { selIdx--; paintAll(); }
-  });
-  document.getElementById("next").addEventListener("click", function(){
-    if (selIdx < maxIdx) { selIdx++; paintAll(); }
-  });
+  function springe(n){
+    var neu = Math.max(0, Math.min(maxIdx, selIdx + n));
+    if (neu !== selIdx) { selIdx = neu; paintAll(); }
+  }
+  document.getElementById("prevW").addEventListener("click", function(){ springe(-7); });
+  document.getElementById("prev").addEventListener("click", function(){ springe(-1); });
+  document.getElementById("next").addEventListener("click", function(){ springe(1); });
+  document.getElementById("nextW").addEventListener("click", function(){ springe(7); });
 
   /* ---------- Sicherung in einem geheimen GitHub-Gist ---------- */
 

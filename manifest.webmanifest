@@ -1,6 +1,6 @@
 {
-  "name": "HabitGrid",
-  "short_name": "HabitGrid",
+  "name": "Habit Tracker",
+  "short_name": "Habit Tracker",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
