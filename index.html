@@ -187,8 +187,9 @@
   .sheetbar img{width:100%;height:auto;display:block}
   .hit{
     position:absolute;top:63%;transform:translate(-50%,-50%);
-    width:14%;aspect-ratio:1;border:0;background:none;padding:0;margin:0;
+    width:58px;height:58px;border:0;background:none;padding:0;margin:0;
     cursor:pointer;border-radius:50%;touch-action:manipulation;
+    -webkit-appearance:none;appearance:none;z-index:2;
   }
   .hit:active{opacity:.35;background:#000}
   .hit:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
@@ -212,6 +213,9 @@
   .sheet input{
     appearance:none;flex:1;min-width:0;border:0;background:none;padding:0;
     font-family:inherit;font-size:17px;color:#000;letter-spacing:-.02em;
+    /* soft fade at both ends instead of a hard cut */
+    -webkit-mask-image:linear-gradient(to right,transparent 0,#000 14px,#000 calc(100% - 26px),transparent 100%);
+    mask-image:linear-gradient(to right,transparent 0,#000 14px,#000 calc(100% - 26px),transparent 100%);
   }
   .sheet input:focus{outline:none}
   .sheet .foot{
