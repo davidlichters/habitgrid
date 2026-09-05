@@ -140,13 +140,8 @@
   .row .main:focus-visible{outline:2px solid var(--blue);outline-offset:-3px;border-radius:8px}
   .ico{
     width:29px;height:29px;border-radius:7px;flex:0 0 auto;
-    display:grid;place-items:center;
+    display:block;object-fit:cover;
   }
-  .ico svg{width:18px;height:18px;stroke:#fff;stroke-width:2.1;fill:none;
-           stroke-linecap:round;stroke-linejoin:round}
-  .i-connect{background:#0A84FF}
-  .i-disconnect{background:#FF3B30}
-  .i-refresh{background:#30D158}
   .info{
     appearance:none;background:none;border:0;padding:6px;margin:0;cursor:pointer;
     flex:0 0 auto;line-height:0;touch-action:manipulation;
@@ -251,7 +246,7 @@
 
       <div class="row">
         <button class="main" id="rowConnect" type="button">
-          <span class="ico i-connect"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          <img class="ico" src="ico-connect.jpg" alt="">
           <span>Connect</span>
         </button>
         <button class="info" type="button" data-note="nConnect" aria-label="About Connect"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
@@ -260,7 +255,7 @@
 
       <div class="row">
         <button class="main" id="rowDisconnect" type="button">
-          <span class="ico i-disconnect"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l1.2-1.2"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 6.1 7.7"/><path d="M3.5 3.5l17 17"/></svg></span>
+          <img class="ico" src="ico-disconnect.jpg" alt="">
           <span>Disconnect</span>
         </button>
         <button class="info" type="button" data-note="nDisconnect" aria-label="About Disconnect"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
@@ -269,12 +264,21 @@
 
       <div class="row">
         <button class="main" id="rowRefresh" type="button">
-          <span class="ico i-refresh"><svg viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-2.49-6.01"/><path d="M20.5 3.4v5.1h-5.1"/></svg></span>
+          <img class="ico" src="ico-refresh.jpg" alt="">
           <span>Refresh</span>
         </button>
         <button class="info" type="button" data-note="nRefresh" aria-label="About Refresh"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
       </div>
       <p class="note" id="nRefresh"><b>Pulls the copy from GitHub.</b> If the copy is newer than what is on this iPhone, it replaces what you see. This is how you get your ticks back on a new phone: connect with the same token, then Refresh.</p>
+
+      <div class="row">
+        <button class="main" id="rowShare" type="button">
+          <img class="ico" src="ico-share.jpg" alt="">
+          <span>Share</span>
+        </button>
+        <button class="info" type="button" data-note="nShare" aria-label="About Share"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4"/><path d="M12 10.6v6.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r=".2" stroke-width="2.2"/></svg></button>
+      </div>
+      <p class="note" id="nShare"><b>Sends the link to this app.</b> Opens the iPhone share sheet with WhatsApp in it, so you can send the link to a chat. If the share sheet is not available, WhatsApp opens straight away with the link ready to send. Nobody who opens the link sees your ticks, they get an empty grid on their own phone.</p>
 
       <div class="row">
         <span class="plain">Hide menu bar</span>
@@ -587,6 +591,15 @@
     say("Backup off");
   });
   document.getElementById("rowRefresh").addEventListener("click", function(){ pull(false); });
+
+  document.getElementById("rowShare").addEventListener("click", function(){
+    var link = location.origin + location.pathname;
+    if (navigator.share) {
+      navigator.share({ title: "Habit Tracker", url: link }).catch(function(){});
+    } else {
+      window.open("https://wa.me/?text=" + encodeURIComponent(link), "_blank");
+    }
+  });
 
   /* hide menu bar */
   var hideBtn = document.getElementById("hideBar");

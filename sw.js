@@ -1,6 +1,7 @@
 /* Netz zuerst, ohne Netz die letzte gespeicherte Fassung. */
-var CACHE = "habitgrid-v1";
-var FILES = ["./", "./index.html", "./icon.png", "./manifest.webmanifest"];
+var CACHE = "habitgrid-v2";
+var FILES = ["./", "./index.html", "./icon.png", "./manifest.webmanifest",
+             "./ico-connect.jpg", "./ico-disconnect.jpg", "./ico-refresh.jpg", "./ico-share.jpg"];
 
 self.addEventListener("install", function(e){
   self.skipWaiting();
