@@ -73,29 +73,33 @@
 
   .dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin-top:16px}
   .dow span{
-    text-align:center;font-size:13px;font-weight:700;color:#000;
-    letter-spacing:.02em;
+    text-align:center;font-size:10px;font-weight:700;color:#000;
+    letter-spacing:.04em;line-height:1;
   }
   .dow span.we{color:#8E8E93}
   .days{
-    display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin-top:6px;
+    overflow:hidden;margin-top:12px;
     touch-action:pan-y;user-select:none;-webkit-user-select:none;
   }
-  .days button{
+  .track{display:flex;will-change:transform}
+  .week{
+    flex:0 0 100%;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));
+  }
+  .week button{
     appearance:none;background:none;border:0;padding:0;margin:0;
-    font-family:inherit;font-size:30px;font-weight:400;letter-spacing:-.02em;
-    color:#000;cursor:pointer;display:grid;place-items:center;height:54px;
+    font-family:inherit;font-size:18px;font-weight:400;letter-spacing:-.02em;
+    color:#000;cursor:pointer;display:grid;place-items:center;height:44px;
     font-variant-numeric:tabular-nums;touch-action:pan-y;
   }
-  .days button .n{
-    display:grid;place-items:center;width:100%;max-width:54px;aspect-ratio:1;
+  .week button .n{
+    display:grid;place-items:center;width:100%;max-width:32px;aspect-ratio:1;
     border-radius:50%;
   }
-  .days button.future{color:#C7C7CC;cursor:default}
-  .days button.sel .n{background:#000;color:#fff}
-  .days button:focus-visible{outline:2px solid var(--blue);outline-offset:-4px;border-radius:50%}
+  .week button.future{color:#C7C7CC;cursor:default}
+  .week button.sel .n{background:#000;color:#fff}
+  .week button:focus-visible{outline:2px solid var(--blue);outline-offset:-4px;border-radius:50%}
   .dlabel{
-    margin-top:10px;text-align:center;font-size:17px;font-weight:700;
+    margin-top:22px;text-align:center;font-size:14px;font-weight:700;
     letter-spacing:-.02em;color:#000;
   }
 
@@ -303,7 +307,7 @@
 
     <div class="menubar" id="menubar">
       <div class="dow" id="dow"></div>
-      <div class="days" id="days"></div>
+      <div class="days" id="days"><div class="track" id="track"></div></div>
       <div class="dlabel" id="dlabel"></div>
       <div class="letters" id="letters"></div>
       <div class="today" id="today"></div>
@@ -416,54 +420,101 @@
 
   var dowEl = document.getElementById("dow");
   var daysEl = document.getElementById("days");
-  var dayBtns = [];
+  var track = document.getElementById("track");
 
   for (var q = 0; q < 7; q++) {
     var sp = document.createElement("span");
     sp.textContent = DOWL[q];
     if (q >= 5) sp.className = "we";
     dowEl.appendChild(sp);
+  }
 
-    var db = document.createElement("button");
-    db.type = "button";
-    var nn = document.createElement("span");
-    nn.className = "n";
-    db.appendChild(nn);
-    daysEl.appendChild(db);
-    dayBtns.push(db);
-    (function(slot, btn){
-      btn.addEventListener("click", function(){
-        if (dragged) return;                       /* a swipe is not a tap */
-        var idx = weekStartIdx() + slot;
-        if (idx < 0 || idx > maxIdx) return;       /* nothing in the future */
-        selIdx = idx;
-        paintAll();
-      });
-    })(q, db);
+  /* Three weeks side by side: previous, current, next. The middle one is on
+     screen, so a swipe can slide to a neighbour instead of cutting to it. */
+  var weekEls = [];
+  for (var wI = 0; wI < 3; wI++) {
+    var wk = document.createElement("div");
+    wk.className = "week";
+    for (var dI = 0; dI < 7; dI++) {
+      var db = document.createElement("button");
+      db.type = "button";
+      var nn = document.createElement("span");
+      nn.className = "n";
+      db.appendChild(nn);
+      wk.appendChild(db);
+    }
+    track.appendChild(wk);
+    weekEls.push(wk);
   }
 
   function weekStartIdx(){ return selIdx - (selIdx % 7); }
 
-  /* Swiping across the numbers moves a whole week. */
-  var startX = 0, startY = 0, dragged = false, tracking = false;
+  function fillWeek(el, ws){
+    for (var i = 0; i < 7; i++) {
+      var idx = ws + i;
+      var b = el.children[i];
+      if (idx < 0 || idx >= CELLS) { b.firstChild.textContent = ""; b.className = "future"; b.disabled = true; b.dataset.idx = ""; continue; }
+      var d = addDays(START, idx);
+      b.firstChild.textContent = d.getDate();
+      var cls = idx > todayIdx ? "future" : "";
+      if (idx === selIdx) cls += (cls ? " " : "") + "sel";
+      b.className = cls;
+      b.disabled = idx > maxIdx;
+      b.dataset.idx = idx;
+    }
+  }
+
+  function setX(px, animate){
+    track.style.transition = animate ? "transform .28s cubic-bezier(.25,.46,.45,.94)" : "none";
+    track.style.transform = "translateX(calc(-100% + " + px + "px))";
+  }
+
+  track.addEventListener("click", function(e){
+    if (dragged) return;
+    var b = e.target.closest ? e.target.closest("button") : null;
+    if (!b || !b.dataset.idx) return;
+    var idx = +b.dataset.idx;
+    if (idx < 0 || idx > maxIdx) return;
+    selIdx = idx;
+    paintAll();
+  });
+
+  /* Swiping the numbers follows the finger and settles on a whole week. */
+  var startX = 0, startY = 0, dragged = false, tracking = false, sliding = false;
   daysEl.addEventListener("pointerdown", function(e){
+    if (sliding) return;
     tracking = true; dragged = false; startX = e.clientX; startY = e.clientY;
   });
   daysEl.addEventListener("pointermove", function(e){
     if (!tracking) return;
-    if (Math.abs(e.clientX - startX) > 12 && Math.abs(e.clientX - startX) > Math.abs(e.clientY - startY)) dragged = true;
+    var dx = e.clientX - startX;
+    if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(e.clientY - startY)) dragged = true;
+    if (dragged) setX(dx, false);
   });
   function endDrag(e){
     if (!tracking) return;
     tracking = false;
-    var dx = e.clientX - startX;
-    if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(e.clientY - startY)) {
-      jump(dx < 0 ? 7 : -7);
-    }
-    setTimeout(function(){ dragged = false; }, 0);
+    var dx = (e.clientX || startX) - startX;
+    if (!dragged) { setX(0, false); return; }
+
+    var step = dx < 0 ? 7 : -7;
+    var ziel = Math.max(0, Math.min(maxIdx, selIdx + step));
+    var geht = Math.abs(dx) >= 40 && ziel !== selIdx;
+
+    sliding = true;
+    setX(geht ? (dx < 0 ? -daysEl.clientWidth : daysEl.clientWidth) : 0, true);
+    setTimeout(function(){
+      if (geht) { selIdx = ziel; paintAll(); }
+      setX(0, false);
+      sliding = false;
+      dragged = false;
+    }, geht ? 290 : 290);
   }
   daysEl.addEventListener("pointerup", endDrag);
-  daysEl.addEventListener("pointercancel", function(){ tracking = false; dragged = false; });
+  daysEl.addEventListener("pointercancel", function(){
+    if (!tracking) return;
+    tracking = false; dragged = false; setX(0, true);
+  });
 
   var lettersEl = document.getElementById("letters");
   var todayEl = document.getElementById("today");
@@ -495,16 +546,10 @@
     var d = selDate(), dk = key(d);
 
     var ws = weekStartIdx();
-    for (var i2 = 0; i2 < 7; i2++) {
-      var idx = ws + i2;
-      var dd = addDays(START, idx);
-      var b2 = dayBtns[i2];
-      b2.firstChild.textContent = idx >= 0 && idx < CELLS ? dd.getDate() : "";
-      var cls = idx > todayIdx ? "future" : "";
-      if (idx === selIdx) cls += (cls ? " " : "") + "sel";
-      b2.className = cls;
-      b2.disabled = idx > maxIdx || idx < 0;
-    }
+    fillWeek(weekEls[0], ws - 7);
+    fillWeek(weekEls[1], ws);
+    fillWeek(weekEls[2], ws + 7);
+    setX(0, false);
     dlabel.textContent = DAYNAME[selIdx % 7] + " \u2013 " + MONS[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
 
     HABITS.forEach(function(h, i){
