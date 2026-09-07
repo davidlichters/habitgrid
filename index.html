@@ -200,8 +200,12 @@
   .notes{
     display:none;position:fixed;inset:0;z-index:60;background:#fff;
     flex-direction:column;
+    transform:translateX(100%);
+    transition:transform .3s cubic-bezier(.25,.46,.45,.94);
+    box-shadow:-10px 0 28px rgba(0,0,0,.16);
   }
-  .notes.open{display:flex}
+  .notes.mounted{display:flex}
+  .notes.open{transform:translateX(0)}
   .ntitle{
     margin:0;flex:0 0 auto;
     padding:calc(20px + env(safe-area-inset-top)) 20px 10px;
@@ -849,14 +853,25 @@
   var notesText = document.getElementById("notesText");
   var notesTimer = null;
 
+  var notesTimerOut = null;
+
   function openNotes(){
     notesText.value = notes;
+    clearTimeout(notesTimerOut);
+    notesEl.style.transition = "";
+    notesEl.style.transform = "";
+    notesEl.classList.add("mounted");
+    void notesEl.offsetWidth;                 /* force a reflow so it slides in */
     notesEl.classList.add("open");
-    setTimeout(function(){ notesText.focus(); }, 60);
+    setTimeout(function(){ notesText.focus(); }, 320);
   }
   function closeNotes(){
     notesText.blur();
+    notesEl.style.transition = "";
+    notesEl.style.transform = "";             /* class takes over: back to 100% */
     notesEl.classList.remove("open");
+    clearTimeout(notesTimerOut);
+    notesTimerOut = setTimeout(function(){ notesEl.classList.remove("mounted"); }, 320);
   }
   notesText.addEventListener("input", function(){
     notes = notesText.value;
@@ -865,16 +880,40 @@
     notesTimer = setTimeout(function(){ save(); planPush(); }, 400);
   });
 
-  /* Back to the grids: swipe in from the very left edge, like iOS. */
-  var edgeX = 0, edgeY = 0, onEdge = false;
+  /* Back to the grids: drag in from the very left edge. The page follows the
+     finger and snaps away once a quarter of the width is passed. */
+  var edgeX = 0, edgeY = 0, onEdge = false, pulling = false;
+
   notesEl.addEventListener("pointerdown", function(e){
-    onEdge = e.clientX <= 30;
+    if (e.clientX > 30) { onEdge = false; return; }
+    onEdge = true; pulling = false;
     edgeX = e.clientX; edgeY = e.clientY;
+    e.preventDefault();                       /* keep the caret out of the way */
   });
-  notesEl.addEventListener("pointerup", function(e){
-    if (onEdge && e.clientX - edgeX >= 60 && Math.abs(e.clientY - edgeY) < 80) closeNotes();
+  notesEl.addEventListener("pointermove", function(e){
+    if (!onEdge) return;
+    var dx = e.clientX - edgeX;
+    if (!pulling && dx > 6 && Math.abs(dx) > Math.abs(e.clientY - edgeY)) {
+      pulling = true;
+      notesEl.style.transition = "none";
+    }
+    if (pulling) notesEl.style.transform = "translateX(" + Math.max(0, dx) + "px)";
+  });
+  function endPull(e){
+    if (!onEdge) return;
     onEdge = false;
-  });
+    if (!pulling) return;
+    pulling = false;
+    var dx = Math.max(0, (e.clientX || edgeX) - edgeX);
+    notesEl.style.transition = "";
+    if (dx >= notesEl.clientWidth / 4) {
+      closeNotes();
+    } else {
+      notesEl.style.transform = "";           /* springs back to the left edge */
+    }
+  }
+  notesEl.addEventListener("pointerup", endPull);
+  notesEl.addEventListener("pointercancel", endPull);
   document.addEventListener("keydown", function(e){
     if (e.key === "Escape" && notesEl.classList.contains("open")) closeNotes();
   });
