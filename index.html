@@ -209,9 +209,15 @@
   .ntitle{
     margin:0;flex:0 0 auto;
     padding:calc(20px + env(safe-area-inset-top)) 20px 10px;
-    font-size:28px;font-weight:700;letter-spacing:-.035em;line-height:1.1;
-    color:#30D158;
+    line-height:1.1;
   }
+  .ntitle button{
+    appearance:none;background:none;border:0;padding:0;margin:0;cursor:pointer;
+    font-family:inherit;font-size:28px;font-weight:700;letter-spacing:-.035em;
+    line-height:1.1;color:#30D158;text-align:left;touch-action:manipulation;
+  }
+  .ntitle button:active{opacity:.5}
+  .ntitle button:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
   .notes textarea{
     appearance:none;flex:1;width:100%;border:0;outline:none;resize:none;
     background:#fff;color:var(--ink);font-family:inherit;font-size:17px;
@@ -342,7 +348,7 @@
 
 <!-- Notes page behind the green grid -->
 <div class="notes" id="notes" role="dialog" aria-modal="true" aria-label="Gratitude Journal">
-  <h2 class="ntitle">Gratitude Journal</h2>
+  <h2 class="ntitle"><button type="button" id="notesBack">Gratitude Journal</button></h2>
   <textarea id="notesText" placeholder="Type here" spellcheck="false"></textarea>
 </div>
 
@@ -880,40 +886,9 @@
     notesTimer = setTimeout(function(){ save(); planPush(); }, 400);
   });
 
-  /* Back to the grids: drag in from the very left edge. The page follows the
-     finger and snaps away once a quarter of the width is passed. */
-  var edgeX = 0, edgeY = 0, onEdge = false, pulling = false;
+  /* Back to the grids: tap the heading. */
+  document.getElementById("notesBack").addEventListener("click", closeNotes);
 
-  notesEl.addEventListener("pointerdown", function(e){
-    if (e.clientX > 30) { onEdge = false; return; }
-    onEdge = true; pulling = false;
-    edgeX = e.clientX; edgeY = e.clientY;
-    e.preventDefault();                       /* keep the caret out of the way */
-  });
-  notesEl.addEventListener("pointermove", function(e){
-    if (!onEdge) return;
-    var dx = e.clientX - edgeX;
-    if (!pulling && dx > 6 && Math.abs(dx) > Math.abs(e.clientY - edgeY)) {
-      pulling = true;
-      notesEl.style.transition = "none";
-    }
-    if (pulling) notesEl.style.transform = "translateX(" + Math.max(0, dx) + "px)";
-  });
-  function endPull(e){
-    if (!onEdge) return;
-    onEdge = false;
-    if (!pulling) return;
-    pulling = false;
-    var dx = Math.max(0, (e.clientX || edgeX) - edgeX);
-    notesEl.style.transition = "";
-    if (dx >= notesEl.clientWidth / 4) {
-      closeNotes();
-    } else {
-      notesEl.style.transform = "";           /* springs back to the left edge */
-    }
-  }
-  notesEl.addEventListener("pointerup", endPull);
-  notesEl.addEventListener("pointercancel", endPull);
   document.addEventListener("keydown", function(e){
     if (e.key === "Escape" && notesEl.classList.contains("open")) closeNotes();
   });
