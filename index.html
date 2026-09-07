@@ -220,13 +220,18 @@
   .ntitle button:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
   .ntable{
     flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
-    display:grid;grid-template-columns:1fr 1fr;align-content:start;
-    padding:4px 16px calc(20px + env(safe-area-inset-bottom));
+    display:grid;grid-template-columns:auto minmax(0,1fr);align-content:start;
+    padding:4px 20px calc(20px + env(safe-area-inset-bottom));
+  }
+  .ndate{
+    font-size:17px;line-height:1.4;letter-spacing:-.01em;color:#000;
+    padding:9px 14px 9px 0;white-space:nowrap;
+    font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none;
   }
   .ncell{
     appearance:none;border:0;outline:none;background:#fff;
     font-family:inherit;font-size:17px;line-height:1.4;letter-spacing:-.01em;
-    color:#000;padding:9px 6px;width:100%;min-width:0;
+    color:#000;padding:9px 0;width:100%;min-width:0;
   }
   .ncell::placeholder{color:#fff}
   .card.notable .grid{cursor:pointer}
@@ -390,7 +395,7 @@
   var GKEY = "habitgrid.gist";
   var BKEY = "habitgrid.hidebar";
   var updatedAt = 0;
-  var notes = [];
+  var notes = {};
 
   var WEEKS = 51;
   var CELLS = WEEKS * 7;              /* 357 */
@@ -428,7 +433,7 @@
         if (p && p.days) {
           take(p.days);
           updatedAt = p.updatedAt || 0;
-          notes = (typeof p.notes === "undefined") ? [] : p.notes;
+          notes = (p.notes && typeof p.notes === "object" && !Array.isArray(p.notes)) ? p.notes : {};
           return;
         }
       }
@@ -736,7 +741,8 @@
         if (!p || !p.days) throw new Error("Copy unreadable");
         if ((p.updatedAt || 0) > updatedAt) {
           take(p.days);
-          if (typeof p.notes !== "undefined") { notes = p.notes; buildTable(); }
+          notes = (p.notes && typeof p.notes === "object" && !Array.isArray(p.notes)) ? p.notes : {};
+          buildTable();
           updatedAt = p.updatedAt || 0;
           save();
           paintAll();
@@ -862,49 +868,43 @@
   var notesEl = document.getElementById("notes");
   var ntable = document.getElementById("ntable");
   var notesTimer = null;
-  var ROWS_MIN = 12;
 
-  /* notes holds rows of two cells. An older backup may still hold a plain
-     string, which goes into the very first cell. */
-  function rowsFromNotes(){
-    if (Array.isArray(notes)) return notes.map(function(r){
-      return [ (r && r[0]) || "", (r && r[1]) || "" ];
-    });
-    if (typeof notes === "string" && notes) return [[notes, ""]];
-    return [];
+  /* notes is one line per day: { "2026-09-07": "text" }. Newest day on top,
+     the date on the left is fixed, only the right cell can be typed in. */
+  function notesObj(){
+    if (notes && typeof notes === "object" && !Array.isArray(notes)) return notes;
+    notes = {};                                  /* older shapes are dropped */
+    return notes;
   }
   function buildTable(){
-    var rows = rowsFromNotes();
-    while (rows.length < ROWS_MIN) rows.push(["", ""]);
+    var o = notesObj();
+    var heute = key(today);
+    var tage = Object.keys(o).filter(function(k){ return o[k]; });
+    if (tage.indexOf(heute) < 0) tage.push(heute);
+    tage.sort().reverse();                       /* newest first */
+
     ntable.innerHTML = "";
-    rows.forEach(function(r){ addRow(r[0], r[1]); });
-  }
-  function addRow(a, b){
-    [a, b].forEach(function(v){
+    tage.forEach(function(tag){
+      var d = document.createElement("div");
+      d.className = "ndate";
+      d.textContent = tag;
+      ntable.appendChild(d);
+
       var i = document.createElement("input");
       i.className = "ncell";
       i.type = "text";
       i.autocomplete = "off";
       i.spellcheck = false;
-      i.value = v || "";
+      i.value = o[tag] || "";
+      i.dataset.day = tag;
       i.addEventListener("input", cellsChanged);
       ntable.appendChild(i);
     });
   }
-  function readTable(){
-    var cells = ntable.querySelectorAll(".ncell");
-    var rows = [];
-    for (var i = 0; i < cells.length; i += 2) rows.push([cells[i].value, cells[i+1] ? cells[i+1].value : ""]);
-    while (rows.length && !rows[rows.length-1][0] && !rows[rows.length-1][1]) rows.pop();
-    return rows;
-  }
-  function cellsChanged(){
-    var cells = ntable.querySelectorAll(".ncell");
-    var lastFilled = cells.length >= 2 &&
-      (cells[cells.length-2].value || cells[cells.length-1].value);
-    if (lastFilled) addRow("", "");          /* always keep an empty line ready */
-
-    notes = readTable();
+  function cellsChanged(e){
+    var o = notesObj();
+    var tag = e.target.dataset.day;
+    if (e.target.value) o[tag] = e.target.value; else delete o[tag];
     updatedAt = Date.now();
     clearTimeout(notesTimer);
     notesTimer = setTimeout(function(){ save(); planPush(); }, 400);
