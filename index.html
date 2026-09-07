@@ -196,6 +196,20 @@
   }
   .status.warn{color:#FF3B30}
 
+  /* ---------- notes page ---------- */
+  .notes{
+    display:none;position:fixed;inset:0;z-index:60;background:#fff;
+  }
+  .notes.open{display:block}
+  .notes textarea{
+    appearance:none;width:100%;height:100%;border:0;outline:none;resize:none;
+    background:#fff;color:var(--ink);font-family:inherit;font-size:17px;
+    line-height:1.5;letter-spacing:-.01em;
+    padding:calc(22px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+  }
+  .notes textarea::placeholder{color:#C7C7CC}
+  .card.notable .grid{cursor:pointer}
+
   /* ---------- iOS style sheet ---------- */
   .sheet{
     display:none;position:fixed;inset:0;z-index:50;background:#F2F1F5;
@@ -315,6 +329,11 @@
   <div class="cards" id="cards"></div>
 </div>
 
+<!-- Notes page behind the green grid -->
+<div class="notes" id="notes" role="dialog" aria-modal="true" aria-label="Notes">
+  <textarea id="notesText" placeholder="Type here" spellcheck="false"></textarea>
+</div>
+
 <!-- Connect sheet -->
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Connect to GitHub">
   <div class="sheetbar">
@@ -349,6 +368,7 @@
   var GKEY = "habitgrid.gist";
   var BKEY = "habitgrid.hidebar";
   var updatedAt = 0;
+  var notes = "";
 
   var WEEKS = 51;
   var CELLS = WEEKS * 7;              /* 357 */
@@ -383,14 +403,19 @@
       var raw = localStorage.getItem(KEY);
       if (raw) {
         var p = JSON.parse(raw);
-        if (p && p.days) { take(p.days); updatedAt = p.updatedAt || 0; return; }
+        if (p && p.days) {
+          take(p.days);
+          updatedAt = p.updatedAt || 0;
+          notes = typeof p.notes === "string" ? p.notes : "";
+          return;
+        }
       }
       var older = localStorage.getItem(KEY_OLD);
       if (older) { take(JSON.parse(older)); updatedAt = 1; save(); }
     } catch (e) {}
   }
   function save(){
-    try { localStorage.setItem(KEY, JSON.stringify({ updatedAt: updatedAt, days: data })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes })); } catch (e) {}
   }
   function remember(k, v){
     try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {}
@@ -589,6 +614,10 @@
       }
     }
     card.appendChild(grid);
+    if (h.k === "G") {
+      card.className = "card notable";
+      grid.addEventListener("click", openNotes);
+    }
     cardsEl.appendChild(card);
     grids.push({ h: h, cells: cells });
   });
@@ -632,7 +661,7 @@
       "Content-Type": "application/json"
     };
   }
-  function payload(){ return JSON.stringify({ updatedAt: updatedAt, days: data }, null, 1); }
+  function payload(){ return JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes }, null, 1); }
 
   function planPush(){
     if (!stored(TKEY)) return;
@@ -685,6 +714,7 @@
         if (!p || !p.days) throw new Error("Copy unreadable");
         if ((p.updatedAt || 0) > updatedAt) {
           take(p.days);
+          if (typeof p.notes === "string") { notes = p.notes; notesText.value = notes; }
           updatedAt = p.updatedAt || 0;
           save();
           paintAll();
@@ -805,6 +835,42 @@
     /* checked means the bar is showing, so a tap hides it */
     setBare(hideBtn.getAttribute("aria-checked") === "true", true);
   });
+  /* ---------- notes page ---------- */
+
+  var notesEl = document.getElementById("notes");
+  var notesText = document.getElementById("notesText");
+  var notesTimer = null;
+
+  function openNotes(){
+    notesText.value = notes;
+    notesEl.classList.add("open");
+    setTimeout(function(){ notesText.focus(); }, 60);
+  }
+  function closeNotes(){
+    notesText.blur();
+    notesEl.classList.remove("open");
+  }
+  notesText.addEventListener("input", function(){
+    notes = notesText.value;
+    updatedAt = Date.now();
+    clearTimeout(notesTimer);
+    notesTimer = setTimeout(function(){ save(); planPush(); }, 400);
+  });
+
+  /* Back to the grids: swipe in from the very left edge, like iOS. */
+  var edgeX = 0, edgeY = 0, onEdge = false;
+  notesEl.addEventListener("pointerdown", function(e){
+    onEdge = e.clientX <= 30;
+    edgeX = e.clientX; edgeY = e.clientY;
+  });
+  notesEl.addEventListener("pointerup", function(e){
+    if (onEdge && e.clientX - edgeX >= 60 && Math.abs(e.clientY - edgeY) < 80) closeNotes();
+    onEdge = false;
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && notesEl.classList.contains("open")) closeNotes();
+  });
+
   /* ---------- connect sheet ---------- */
 
   var sheet = document.getElementById("sheet");
