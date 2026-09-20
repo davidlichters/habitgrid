@@ -333,15 +333,21 @@
      Katze einmal quer durch die Reihe und zieht den Regenbogen hinter sich her.
      Waehrenddessen liegt am Bildschirmrand derselbe Nebel wie bei VC. */
   #flug{position:fixed;inset:0;z-index:99;pointer-events:none}
-  #flug .figur{position:absolute;left:0;top:0;background-repeat:no-repeat;background-size:100% 100%;will-change:transform}
-  #flug .rand{
-    position:absolute;inset:0;
-    background:conic-gradient(#ff5fa2,#ff9a3c,#ffe45c,#4fe3ff,#4a8dff,#c27dff,#ff5fa2);
-    filter:blur(34px) saturate(1.1);
-    -webkit-mask-image:radial-gradient(120% 90% at 50% 50%, transparent 52%, #000 86%);
-            mask-image:radial-gradient(120% 90% at 50% 50%, transparent 52%, #000 86%);
-    opacity:0;
-  }
+  /* 21.09.: Weder Maske noch weisser Kern haben getragen, beide haben am Ende
+     die ganze Seite ueberdeckt statt nur den Rand einzufaerben. Jetzt vier
+     duenne Farbbaender direkt an den Kanten, jedes stark weichgezeichnet. Die
+     Unschaerfe allein macht den Nebel, es gibt nichts, was die Mitte bedecken
+     koennte. */
+  #flug .rand{position:absolute;inset:0;overflow:hidden;opacity:0}
+  #flug .rand i{position:absolute;display:block;filter:blur(26px)}
+  #flug .rand .o{top:-6px;left:-20px;right:-20px;height:16px;
+    background:linear-gradient(90deg,#ff5fa2,#ff9a3c,#ffe45c,#4fe3ff,#4a8dff,#c27dff)}
+  #flug .rand .u{bottom:-6px;left:-20px;right:-20px;height:16px;
+    background:linear-gradient(90deg,#c27dff,#4a8dff,#4fe3ff,#ffe45c,#ff9a3c,#ff5fa2)}
+  #flug .rand .l{left:-6px;top:-20px;bottom:-20px;width:16px;
+    background:linear-gradient(180deg,#ff5fa2,#c27dff,#4a8dff,#4fe3ff,#ffe45c,#ff9a3c)}
+  #flug .rand .r{right:-6px;top:-20px;bottom:-20px;width:16px;
+    background:linear-gradient(180deg,#ffe45c,#4fe3ff,#4a8dff,#c27dff,#ff5fa2,#ff9a3c)}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 </style>
@@ -402,7 +408,7 @@
         </button>
       </div>
     </div>
-    <div class="status" id="status">v48, backup off</div>
+    <div class="status" id="status">v49, backup off</div>
 
   </div>
 
@@ -830,26 +836,6 @@
      das Bild ist ein Raster von 12 mal 8 Kloetzen in #d47e63, gemessen am
      Original (945 x 2048, Figur bei 174/828, 603 x 395). Als Raster gezeichnet
      statt als Bild bleibt es bei jeder Groesse scharf und wiegt nichts. */
-  var MASKOTTCHEN = [
-    "..########..",
-    "..#.####.#..",
-    "############",
-    "############",
-    "..########..",
-    "..########..",
-    "..#.#..#.#..",
-    "..#.#..#.#..",
-  ];
-  var MASKFARBE = "#d47e63";
-  function maskottchenBild(){
-    var w = 12, h = MASKOTTCHEN.length, teile = "";
-    for (var r = 0; r < h; r++) for (var c = 0; c < w; c++)
-      if (MASKOTTCHEN[r][c] === "#")
-        teile += '<rect x="' + c + '" y="' + r + '" width="1.02" height="1.02"/>';
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '" '
-            + 'shape-rendering="crispEdges" fill="' + MASKFARBE + '">' + teile + '</svg>';
-    return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-  }
   function farbenZurueck(){
     toggles.forEach(function(b){
       var f = b.querySelector(".fill");
@@ -868,22 +854,10 @@
        und in dieser Vorschau lieferten weder getImageData noch getComputedStyle
        brauchbare Werte, um den Versatz zu messen. Ein Element, das direkt auf
        die gemessene Mitte des Kreises gesetzt wird, kann gar nicht danebenliegen. */
-    var figur = document.createElement("div");
-    figur.className = "figur";
-    box.appendChild(rand); box.appendChild(figur);
+    rand.innerHTML = '<i class="o"></i><i class="u"></i><i class="l"></i><i class="r"></i>';
+    box.appendChild(rand);
     document.body.appendChild(box);
 
-    var BW = box.clientWidth;
-    var mitten = toggles.map(function(b){
-      var r = b.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    });
-    var x0 = mitten[0].x, abstand = (mitten[6].x - mitten[0].x) / 6;
-    var zeile = mitten[0].y;
-    var GROSS = 62, HOCH = GROSS * MASKOTTCHEN.length / 12;
-    figur.style.width = GROSS + "px";
-    figur.style.height = HOCH + "px";
-    figur.style.backgroundImage = "url('" + maskottchenBild() + "')";
 
     var SCHRITTE = toggles.length + FARBEN.length;      /* 7 + 6 = 13 Zeilen */
     var DAUER = VORLAUF + SCHRITTE * MOMENT;
@@ -904,14 +878,6 @@
         if (f) f.style.background = c;
         b.style.borderColor = c;
       });
-
-      /* Das Maskottchen sitzt auf dem Kreis, der gerade rot ist. */
-      var x = ms < VORLAUF
-        ? -GROSS + (ms / VORLAUF) * (x0 + GROSS)
-        : x0 + mz * abstand;
-      var y = zeile + Math.sin(p * Math.PI * 6) * 8;
-      figur.style.transform = "translate(" + (x - GROSS / 2).toFixed(1) + "px,"
-                                           + (y - HOCH / 2).toFixed(1) + "px)";
 
       if (p < 1) naechstesBild(bild);
       else { farbenZurueck(); box.remove(); }
@@ -1013,7 +979,7 @@
 
   /* 21.09., David: die Fassungsnummer gehoert VOR "saved", also "v46 saved
      23:48". Keine eigene Zeile mehr, sondern dort, wo er ohnehin hinsieht. */
-  var FASSUNG = "v48";
+  var FASSUNG = "v49";
   function clock(){ var d = new Date(); return d2(d.getHours()) + ":" + d2(d.getMinutes()); }
   function say(text, warn){
     statusEl.textContent = text;
