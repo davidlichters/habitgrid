@@ -145,13 +145,13 @@
     border:2px solid var(--on);opacity:0;pointer-events:none;
   }
   /* Zweiter Weg, falls element.animate auf dem Geraet nicht laeuft. */
-  .today button.pop .fill{animation:fuellen .42s cubic-bezier(.34,1.56,.64,1) both}
-  .today button.pop .ring{animation:ringen .52s cubic-bezier(.2,.7,.3,1) both}
-  .today button.pop{animation:federn .42s cubic-bezier(.34,1.56,.64,1)}
-  .today button.pop .ck path{animation:zeichnen .32s cubic-bezier(.25,.8,.3,1) .11s both}
-  @keyframes fuellen{0%{transform:scale(0);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
-  @keyframes ringen{0%{opacity:.55;transform:scale(1)}100%{opacity:0;transform:scale(2.05)}}
-  @keyframes federn{0%{transform:scale(.8)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+  .today button.pop .fill{animation:fuellen .66s cubic-bezier(.34,1.56,.64,1) both}
+  .today button.pop .ring{animation:ringen .8s cubic-bezier(.2,.7,.3,1) both}
+  .today button.pop{animation:federn .66s cubic-bezier(.34,1.56,.64,1)}
+  .today button.pop .ck path{animation:zeichnen .46s cubic-bezier(.25,.8,.3,1) .2s both}
+  @keyframes fuellen{0%{transform:scale(0);opacity:0}55%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:1}}
+  @keyframes ringen{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(2.7)}}
+  @keyframes federn{0%{transform:scale(.72)}50%{transform:scale(1.32)}100%{transform:scale(1)}}
   @keyframes zeichnen{from{stroke-dashoffset:46}to{stroke-dashoffset:0}}
   .today button:active{transform:scale(.9)}
   .today button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
@@ -397,7 +397,7 @@
       </div>
     </div>
     <div class="status" id="status">Backup off</div>
-    <div class="ver">Fassung 32</div>
+    <div class="ver">Fassung 33</div>
     <div class="ver" id="diag">Noch nichts getippt</div>
   </div>
 
@@ -695,17 +695,17 @@
     });
     if (an) {
       fill.animate([{ transform: "scale(0)", opacity: 0 },
-                    { transform: "scale(1.12)", opacity: 1, offset: .6 },
+                    { transform: "scale(1.3)", opacity: 1, offset: .55 },
                     { transform: "scale(1)", opacity: 1 }],
-                   { duration: 420, easing: FEDER, fill: "both" });
-      b.animate([{ transform: "scale(.8)" }, { transform: "scale(1.18)", offset: .55 },
+                   { duration: 660, easing: FEDER, fill: "both" });
+      b.animate([{ transform: "scale(.72)" }, { transform: "scale(1.32)", offset: .5 },
                  { transform: "scale(1)" }],
-                { duration: 420, easing: FEDER });
-      ring.animate([{ opacity: .55, transform: "scale(1)" },
-                    { opacity: 0, transform: "scale(2.05)" }],
-                   { duration: 520, easing: "cubic-bezier(.2,.7,.3,1)" });
+                { duration: 660, easing: FEDER });
+      ring.animate([{ opacity: .7, transform: "scale(1)" },
+                    { opacity: 0, transform: "scale(2.7)" }],
+                   { duration: 800, easing: "cubic-bezier(.2,.7,.3,1)" });
       if (pa) pa.animate([{ strokeDashoffset: 46 }, { strokeDashoffset: 0 }],
-                         { duration: 320, delay: 110, easing: "cubic-bezier(.25,.8,.3,1)", fill: "both" });
+                         { duration: 460, delay: 200, easing: "cubic-bezier(.25,.8,.3,1)", fill: "both" });
       if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
     } else {
       fill.animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(0)", opacity: 0 }],
