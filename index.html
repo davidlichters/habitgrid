@@ -264,8 +264,8 @@
   /* Training: Datum links klein, dann zwei Spalten zum Tippen. */
   .ttable{
     flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
-    display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);
-    align-content:start;column-gap:14px;
+    display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));
+    align-content:start;column-gap:11px;
     padding:4px 20px calc(20px + env(safe-area-inset-bottom));
   }
   .thead{
@@ -273,6 +273,9 @@
     padding:2px 0 10px;border-bottom:1px solid var(--ios-sep);
   }
   .ttable .ncell{font-variant-numeric:tabular-nums}
+  /* Auf 390 px muessen vier Spalten nebeneinander passen, deshalb Tag und
+     Monat statt des vollen Datums. Das Jahr steht ohnehin in der Sortierung. */
+  .ttable .ndate{padding-right:0;font-size:16px;color:#8E8E93}
 
   /* ---------- iOS style sheet ---------- */
   .sheet{
@@ -441,6 +444,7 @@
   var updatedAt = 0;
   var notes = {};
   /* Training: eine Zeile je Tag, { "2026-09-20": { c:"3200", p:"135" } } */
+  /* w = Gewicht am Morgen, c = Kalorien, p = Eiweiss */
   var meals = {};
 
   var WEEKS = 51;
@@ -1019,12 +1023,12 @@
   function buildMeals(){
     var o = mealsObj();
     var heute = key(today);
-    var tage = Object.keys(o).filter(function(k){ return o[k] && (o[k].c || o[k].p); });
+    var tage = Object.keys(o).filter(function(k){ return o[k] && (o[k].w || o[k].c || o[k].p); });
     if (tage.indexOf(heute) < 0) tage.push(heute);
     tage.sort().reverse();
 
     ttable.innerHTML = "";
-    ["", "Calories", "Protein"].forEach(function(txt){
+    ["", "Weight", "Calories", "Protein"].forEach(function(txt){
       var h = document.createElement("div");
       h.className = "thead";
       h.textContent = txt;
@@ -1034,10 +1038,11 @@
     tage.forEach(function(tag){
       var d = document.createElement("div");
       d.className = "ndate";
-      d.textContent = tag;
+      d.textContent = tag.slice(8) + "-" + tag.slice(5, 7);
+      d.title = tag;
       ttable.appendChild(d);
 
-      ["c", "p"].forEach(function(feld){
+      ["w", "c", "p"].forEach(function(feld){
         var i = document.createElement("input");
         i.className = "ncell";
         i.type = "text";
@@ -1057,7 +1062,7 @@
     var tag = e.target.dataset.day, feld = e.target.dataset.feld;
     if (!o[tag]) o[tag] = {};
     if (e.target.value) o[tag][feld] = e.target.value; else delete o[tag][feld];
-    if (!o[tag].c && !o[tag].p) delete o[tag];
+    if (!o[tag].w && !o[tag].c && !o[tag].p) delete o[tag];
     updatedAt = Date.now();
     clearTimeout(trainTimer);
     trainTimer = setTimeout(function(){ save(); planPush(); }, 400);
