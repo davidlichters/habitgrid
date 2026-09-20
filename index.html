@@ -333,7 +333,7 @@
      Katze einmal quer durch die Reihe und zieht den Regenbogen hinter sich her.
      Waehrenddessen liegt am Bildschirmrand derselbe Nebel wie bei VC. */
   #flug{position:fixed;inset:0;z-index:99;pointer-events:none}
-  #flug canvas{position:absolute;inset:0;width:100%;height:100%}
+  #flug .figur{position:absolute;left:0;top:0;background-repeat:no-repeat;background-size:100% 100%;will-change:transform}
   #flug .rand{
     position:absolute;inset:0;
     background:conic-gradient(#ff5fa2,#ff9a3c,#ffe45c,#4fe3ff,#4a8dff,#c27dff,#ff5fa2);
@@ -816,14 +816,42 @@
     }
   }
 
-  /* DER FLUG, 20.09., Davids zweite Fassung: das Claude-Maskottchen fliegt
-     durch die Reihe, und statt eines gemalten Schweifs laufen die sieben
-     Kreise selbst durch sieben Farben, jeder um eine Stelle versetzt. Dadurch
-     steht in jedem Augenblick ein ganzer Regenbogen in der Reihe, und er
-     wandert. */
-  var FARBEN = ["#ff375f", "#ff9a3c", "#ffe45c", "#30d158", "#4fe3ff", "#4a8dff", "#c27dff"];
-  var sternBild = new Image();
-  sternBild.src = "stern.png";
+  /* DER FLUG, 20.09., Davids dritte Fassung, aus seiner Tabelle abgelesen:
+       Moment 0  rot gruen gruen gruen gruen gruen gruen
+       Moment 1  orange rot gruen ...
+       Moment 3  gruen gelb orange rot ...
+     Jeder Kreis laeuft EINMAL durch sechs Farben, rot, orange, gelb, gruen,
+     blau, violett, und faellt danach auf sein Gruen zurueck. Kreis i faengt im
+     Moment i an, deshalb steht die Welle schraeg in der Zeit und sieht aus wie
+     ein Regenbogen, der durch die Reihe wandert. Das Maskottchen fliegt genau
+     auf dem Kreis, der gerade rot ist. */
+  var FARBEN = ["#ff3b30", "#ff9500", "#ffcc00", "#30d158", "#0a84ff", "#bf5af2"];
+  var MOMENT = 170;                 /* Millisekunden je Zeile seiner Tabelle */
+  var VORLAUF = 500;                /* Anflug von links bis zum ersten Kreis */
+  /* Davids Claude-Maskottchen aus WhatsApp, Pixel fuer Pixel abgelesen:
+     das Bild ist ein Raster von 12 mal 8 Kloetzen in #d47e63, gemessen am
+     Original (945 x 2048, Figur bei 174/828, 603 x 395). Als Raster gezeichnet
+     statt als Bild bleibt es bei jeder Groesse scharf und wiegt nichts. */
+  var MASKOTTCHEN = [
+    "..########..",
+    "..#.####.#..",
+    "############",
+    "############",
+    "..########..",
+    "..########..",
+    "..#.#..#.#..",
+    "..#.#..#.#..",
+  ];
+  var MASKFARBE = "#d47e63";
+  function maskottchenBild(){
+    var w = 12, h = MASKOTTCHEN.length, teile = "";
+    for (var r = 0; r < h; r++) for (var c = 0; c < w; c++)
+      if (MASKOTTCHEN[r][c] === "#")
+        teile += '<rect x="' + c + '" y="' + r + '" width="1.02" height="1.02"/>';
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '" '
+            + 'shape-rendering="crispEdges" fill="' + MASKFARBE + '">' + teile + '</svg>';
+    return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+  }
   function farbenZurueck(){
     toggles.forEach(function(b){
       var f = b.querySelector(".fill");
@@ -837,45 +865,55 @@
     box.id = "flug";
     var rand = document.createElement("div");
     rand.className = "rand";
-    var lw = document.createElement("canvas");
-    box.appendChild(rand); box.appendChild(lw);
+    /* 21.09.: das Maskottchen liegt NICHT mehr auf einer Leinwand, sondern ist
+       ein eigenes Element. Auf der Leinwand sass es immer ein Stueck zu tief,
+       und in dieser Vorschau lieferten weder getImageData noch getComputedStyle
+       brauchbare Werte, um den Versatz zu messen. Ein Element, das direkt auf
+       die gemessene Mitte des Kreises gesetzt wird, kann gar nicht danebenliegen. */
+    var figur = document.createElement("div");
+    figur.className = "figur";
+    box.appendChild(rand); box.appendChild(figur);
     document.body.appendChild(box);
 
-    var dpr = Math.min(2, window.devicePixelRatio || 1);
-    var BW = box.clientWidth, BH = box.clientHeight;
-    lw.width = Math.round(BW * dpr); lw.height = Math.round(BH * dpr);
-    var g = lw.getContext("2d");
-    g.scale(dpr, dpr);
+    var BW = box.clientWidth;
+    var mitten = toggles.map(function(b){
+      var r = b.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    var x0 = mitten[0].x, abstand = (mitten[6].x - mitten[0].x) / 6;
+    var zeile = mitten[0].y;
+    var GROSS = 62, HOCH = GROSS * MASKOTTCHEN.length / 12;
+    figur.style.width = GROSS + "px";
+    figur.style.height = HOCH + "px";
+    figur.style.backgroundImage = "url('" + maskottchenBild() + "')";
 
-    var r = todayEl.getBoundingClientRect();
-    var mitte = r.height ? r.top + r.height / 2 : BH * 0.33;
-    var GROSS = 62, DAUER = 2600, t0 = 0;
+    var SCHRITTE = toggles.length + FARBEN.length;      /* 7 + 6 = 13 Zeilen */
+    var DAUER = VORLAUF + SCHRITTE * MOMENT;
+    var t0 = 0;
 
     function bild(jetzt){
       if (!t0) t0 = jetzt;
-      var p = Math.min(1, (jetzt - t0) / DAUER);
-      g.clearRect(0, 0, BW, BH);
-      rand.style.opacity = (Math.sin(Math.PI * Math.min(1, p / 0.9)) * 0.85).toFixed(3);
+      var ms = jetzt - t0, p = Math.min(1, ms / DAUER);
+      rand.style.opacity = (Math.sin(Math.PI * Math.min(1, p / 0.92)) * 0.85).toFixed(3);
 
-      /* Die Welle durch die Reihe: zwei volle Umlaeufe waehrend des Fluges. */
-      var schritt = Math.floor(p * FARBEN.length * 2);
+      /* Die Tabelle: Kreis i zeigt Farbe (Moment - i), sonst sein Gruen. */
+      var mz = (ms - VORLAUF) / MOMENT;                 /* Moment, mit Nachkomma */
+      var m = Math.floor(mz);
       toggles.forEach(function(b, i){
+        var k = m - i;
         var f = b.querySelector(".fill");
-        var c = FARBEN[(schritt + i) % FARBEN.length];
+        var c = (k >= 0 && k < FARBEN.length) ? FARBEN[k] : "";
         if (f) f.style.background = c;
         b.style.borderColor = c;
       });
 
-      /* Das Maskottchen fliegt quer durch, wippt und dreht sich langsam. */
-      var x = -GROSS + p * (BW + 2 * GROSS);
-      var y = mitte + Math.sin(p * Math.PI * 6) * 9;
-      g.save();
-      g.translate(x, y);
-      g.rotate(p * Math.PI * 2);
-      if (sternBild.complete && sternBild.naturalWidth) {
-        g.drawImage(sternBild, -GROSS / 2, -GROSS / 2, GROSS, GROSS);
-      }
-      g.restore();
+      /* Das Maskottchen sitzt auf dem Kreis, der gerade rot ist. */
+      var x = ms < VORLAUF
+        ? -GROSS + (ms / VORLAUF) * (x0 + GROSS)
+        : x0 + mz * abstand;
+      var y = zeile + Math.sin(p * Math.PI * 6) * 8;
+      figur.style.transform = "translate(" + (x - GROSS / 2).toFixed(1) + "px,"
+                                           + (y - HOCH / 2).toFixed(1) + "px)";
 
       if (p < 1) naechstesBild(bild);
       else { farbenZurueck(); box.remove(); }
