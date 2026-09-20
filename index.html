@@ -144,6 +144,15 @@
     position:absolute;inset:-1.5px;border-radius:50%;
     border:2px solid var(--on);opacity:0;pointer-events:none;
   }
+  /* Zweiter Weg, falls element.animate auf dem Geraet nicht laeuft. */
+  .today button.pop .fill{animation:fuellen .42s cubic-bezier(.34,1.56,.64,1) both}
+  .today button.pop .ring{animation:ringen .52s cubic-bezier(.2,.7,.3,1) both}
+  .today button.pop{animation:federn .42s cubic-bezier(.34,1.56,.64,1)}
+  .today button.pop .ck path{animation:zeichnen .32s cubic-bezier(.25,.8,.3,1) .11s both}
+  @keyframes fuellen{0%{transform:scale(0);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
+  @keyframes ringen{0%{opacity:.55;transform:scale(1)}100%{opacity:0;transform:scale(2.05)}}
+  @keyframes federn{0%{transform:scale(.8)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+  @keyframes zeichnen{from{stroke-dashoffset:46}to{stroke-dashoffset:0}}
   .today button:active{transform:scale(.9)}
   .today button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
@@ -388,7 +397,8 @@
       </div>
     </div>
     <div class="status" id="status">Backup off</div>
-    <div class="ver">Fassung 31</div>
+    <div class="ver">Fassung 32</div>
+    <div class="ver" id="diag">Noch nichts getippt</div>
   </div>
 
     <div class="menubar" id="menubar">
@@ -664,6 +674,8 @@
          prefers-reduced-motion und daran, welche Regel im Stylesheet gewinnt.
          element.animate haengt an nichts davon. */
       spiel(b, pa, an);
+      if (an) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+      pruefen(b, an);
       planPush();
     });
     todayEl.appendChild(b);
@@ -701,6 +713,23 @@
       if (pa) pa.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: 46 }],
                          { duration: 140, easing: "ease", fill: "both" });
     }
+  }
+
+  /* 20.09.: David sieht auf seinem iPhone Fassung 31 und trotzdem keine
+     Bewegung. Statt weiter zu raten schreibt die App auf, was beim letzten
+     Tipp wirklich lief. Steht in den Einstellungen unter der Fassung. */
+  function pruefen(b, an){
+    var d = document.getElementById("diag");
+    if (!d) return;
+    var l;
+    try { l = b.getAnimations ? b.getAnimations({ subtree: true }) : null; } catch (e) { l = null; }
+    if (!l) { d.textContent = "Letzter Tipp: getAnimations fehlt"; return; }
+    var js = 0, css = 0;
+    for (var i = 0; i < l.length; i++) {
+      if (l[i].constructor && l[i].constructor.name === "CSSAnimation") css++; else js++;
+    }
+    d.textContent = "Letzter Tipp: " + js + " per JS, " + css + " per CSS"
+      + (an ? "" : " (aus)") + (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches ? ", Bewegung reduziert" : "");
   }
 
   function paintTop(){
