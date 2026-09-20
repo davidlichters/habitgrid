@@ -400,7 +400,7 @@
         </button>
       </div>
     </div>
-    <div class="status" id="status">v51, backup off</div>
+    <div class="status" id="status">v52, backup off</div>
 
   </div>
 
@@ -821,8 +821,10 @@
   var VORLAUF = 0;                  /* kein Anflug mehr, es fliegt nichts */
   var GOLD = [247, 201, 72];        /* #f7c948 */
   var RUHE = [48, 209, 88];         /* #30d158, das normale Gruen */
-  var GOLDZEIT = 5000;              /* so lange bleibt es voll golden */
-  var ABKLINGEN = 10000;            /* und so lange dauert der Weg zurueck */
+  /* 21.09., David: kein Halten. Das Gold faengt sofort an zu wandern, und der
+     ganze Weg zurueck zu Gruen sind die vollen zehn Sekunden. */
+  var GOLDZEIT = 0;
+  var ABKLINGEN = 10000;
   function misch(a, b, t){
     return "rgb(" + Math.round(a[0] + (b[0] - a[0]) * t) + ","
                   + Math.round(a[1] + (b[1] - a[1]) * t) + ","
@@ -990,7 +992,7 @@
 
   /* 21.09., David: die Fassungsnummer gehoert VOR "saved", also "v46 saved
      23:48". Keine eigene Zeile mehr, sondern dort, wo er ohnehin hinsieht. */
-  var FASSUNG = "v51";
+  var FASSUNG = "v52";
   function clock(){ var d = new Date(); return d2(d.getHours()) + ":" + d2(d.getMinutes()); }
   function say(text, warn){
     statusEl.textContent = text;
