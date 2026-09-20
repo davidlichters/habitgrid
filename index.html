@@ -816,13 +816,23 @@
     }
   }
 
-  /* Die sechs Streifen des Originals, von oben nach unten. */
-  var SCHWEIF = ["#ff0000", "#ff9900", "#ffff00", "#33ff00", "#0099ff", "#6633ff"];
-  var katzeBild = new Image();
-  katzeBild.src = "katze.png";
-  function flugLaeuft(){ return !!document.getElementById("flug"); }
+  /* DER FLUG, 20.09., Davids zweite Fassung: das Claude-Maskottchen fliegt
+     durch die Reihe, und statt eines gemalten Schweifs laufen die sieben
+     Kreise selbst durch sieben Farben, jeder um eine Stelle versetzt. Dadurch
+     steht in jedem Augenblick ein ganzer Regenbogen in der Reihe, und er
+     wandert. */
+  var FARBEN = ["#ff375f", "#ff9a3c", "#ffe45c", "#30d158", "#4fe3ff", "#4a8dff", "#c27dff"];
+  var sternBild = new Image();
+  sternBild.src = "stern.png";
+  function farbenZurueck(){
+    toggles.forEach(function(b){
+      var f = b.querySelector(".fill");
+      if (f) f.style.background = "";
+      b.style.borderColor = "";
+    });
+  }
   function regenbogenflug(){
-    if (flugLaeuft()) return;
+    if (document.getElementById("flug")) return;
     var box = document.createElement("div");
     box.id = "flug";
     var rand = document.createElement("div");
@@ -836,36 +846,39 @@
     lw.width = Math.round(BW * dpr); lw.height = Math.round(BH * dpr);
     var g = lw.getContext("2d");
     g.scale(dpr, dpr);
-    g.imageSmoothingEnabled = false;                 /* Pixelgrafik bleibt scharf */
 
-    /* Auf der Hoehe der sieben Kreise fliegen. Ist die Leiste versteckt,
-       fliegt sie auf einem Drittel der Hoehe. */
     var r = todayEl.getBoundingClientRect();
     var mitte = r.height ? r.top + r.height / 2 : BH * 0.33;
-    var hoch = 54, breit = hoch * 250 / 180;
-    var DAUER = 2600, t0 = 0;
+    var GROSS = 62, DAUER = 2600, t0 = 0;
 
     function bild(jetzt){
       if (!t0) t0 = jetzt;
       var p = Math.min(1, (jetzt - t0) / DAUER);
       g.clearRect(0, 0, BW, BH);
-      /* Nebel am Rand: auf, halten, ab. */
       rand.style.opacity = (Math.sin(Math.PI * Math.min(1, p / 0.9)) * 0.85).toFixed(3);
-      /* Flug von links ausserhalb bis rechts ausserhalb, mit Wippen. */
-      var x = -breit + p * (BW + 2 * breit);
-      var y = mitte + Math.sin(p * Math.PI * 7) * 7 - hoch / 2;
-      /* Schweif: sechs Streifen, in Stufen wie im Original. */
-      var sh = hoch * 0.62, s1 = sh / 6, kopf = x + breit * 0.12;
-      for (var i = 0; i < SCHWEIF.length; i++) {
-        g.fillStyle = SCHWEIF[i];
-        for (var sx = -20; sx < kopf; sx += 18) {
-          var stufe = Math.sin((sx * 0.08) + p * 18) > 0 ? 0 : 5;
-          g.fillRect(sx, y + hoch * 0.2 + i * s1 + stufe, 19, s1 + 1);
-        }
+
+      /* Die Welle durch die Reihe: zwei volle Umlaeufe waehrend des Fluges. */
+      var schritt = Math.floor(p * FARBEN.length * 2);
+      toggles.forEach(function(b, i){
+        var f = b.querySelector(".fill");
+        var c = FARBEN[(schritt + i) % FARBEN.length];
+        if (f) f.style.background = c;
+        b.style.borderColor = c;
+      });
+
+      /* Das Maskottchen fliegt quer durch, wippt und dreht sich langsam. */
+      var x = -GROSS + p * (BW + 2 * GROSS);
+      var y = mitte + Math.sin(p * Math.PI * 6) * 9;
+      g.save();
+      g.translate(x, y);
+      g.rotate(p * Math.PI * 2);
+      if (sternBild.complete && sternBild.naturalWidth) {
+        g.drawImage(sternBild, -GROSS / 2, -GROSS / 2, GROSS, GROSS);
       }
-      if (katzeBild.complete && katzeBild.naturalWidth) g.drawImage(katzeBild, x, y, breit, hoch);
+      g.restore();
+
       if (p < 1) naechstesBild(bild);
-      else box.remove();
+      else { farbenZurueck(); box.remove(); }
     }
     naechstesBild(bild);
   }
