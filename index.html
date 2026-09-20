@@ -273,9 +273,8 @@
     padding:2px 0 10px;border-bottom:1px solid var(--ios-sep);
   }
   .ttable .ncell{font-variant-numeric:tabular-nums}
-  /* Auf 390 px muessen vier Spalten nebeneinander passen, deshalb Tag und
-     Monat statt des vollen Datums. Das Jahr steht ohnehin in der Sortierung. */
-  .ttable .ndate{padding-right:0;font-size:16px;color:#8E8E93}
+  /* Volles Datum, dafuer etwas kleiner, damit vier Spalten auf 390 px passen. */
+  .ttable .ndate{padding-right:0;font-size:14px;color:#8E8E93}
 
   /* ---------- iOS style sheet ---------- */
   .sheet{
@@ -1038,8 +1037,7 @@
     tage.forEach(function(tag){
       var d = document.createElement("div");
       d.className = "ndate";
-      d.textContent = tag.slice(8) + "-" + tag.slice(5, 7);
-      d.title = tag;
+      d.textContent = tag;
       ttable.appendChild(d);
 
       ["w", "c", "p"].forEach(function(feld){
