@@ -119,12 +119,11 @@
   }
   .today button{position:relative;overflow:visible}
   /* Die Fuellung ist ein eigener Kreis, der aus der Mitte aufspringt. */
-  .today button::before{
-    content:"";position:absolute;inset:-1.5px;border-radius:50%;
-    background:var(--on);transform:scale(0);opacity:0;
-    transition:transform .34s cubic-bezier(.34,1.56,.64,1),opacity .18s ease;
+  .today button .fill{
+    position:absolute;inset:-1.5px;border-radius:50%;
+    background:var(--on);transform:scale(0);opacity:0;pointer-events:none;
   }
-  .today button.on::before{transform:scale(1);opacity:1}
+  .today button.on .fill{transform:scale(1);opacity:1}
   .today button.on{border-color:var(--on)}
   /* Der Haken ist aus Davids Bild nachgemessen: Kreis 83 breit, Mitte 41/41,
      Radius 32. Die drei Punkte und die Strichbreite decken sein Bild zu
@@ -141,14 +140,10 @@
   }
   .today button.on .ck path{stroke-dashoffset:0}
   /* Ein Ring laeuft einmal nach aussen und verschwindet. */
-  .today button::after{
-    content:"";position:absolute;inset:-1.5px;border-radius:50%;
+  .today button .ring{
+    position:absolute;inset:-1.5px;border-radius:50%;
     border:2px solid var(--on);opacity:0;pointer-events:none;
   }
-  .today button.pop::after{animation:ring .52s cubic-bezier(.2,.7,.3,1) forwards}
-  .today button.pop{animation:pop .42s cubic-bezier(.34,1.56,.64,1)}
-  @keyframes pop{0%{transform:scale(.8)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
-  @keyframes ring{0%{opacity:.55;transform:scale(1)}100%{opacity:0;transform:scale(2.05)}}
   .today button:active{transform:scale(.9)}
   .today button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
@@ -330,9 +325,10 @@
     margin:16px 0 0;font-size:13.5px;line-height:1.42;color:var(--ios-grey);
     letter-spacing:-.005em;
   }
+  /* Die Bewegungsbremse gilt fuer die Seite, NICHT fuer die sieben Kreise:
+     die bewegt JavaScript, und David hat die Animation ausdruecklich verlangt. */
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-  .today button::before{transition:transform .34s cubic-bezier(.34,1.56,.64,1),opacity .18s ease!important}
-  .today button .ck path{transition:stroke-dashoffset .3s cubic-bezier(.25,.8,.3,1) .1s!important}
+  .ver{margin-top:8px;text-align:center;font-size:11px;color:var(--ios-grey);letter-spacing:.02em}
 </style>
 </head>
 <body>
@@ -392,6 +388,7 @@
       </div>
     </div>
     <div class="status" id="status">Backup off</div>
+    <div class="ver">Fassung 30</div>
   </div>
 
     <div class="menubar" id="menubar">
@@ -640,6 +637,12 @@
     b.type = "button";
     b.style.setProperty("--c", h.c);
     b.setAttribute("aria-label", "Habit " + h.k);
+    var fill = document.createElement("i");
+    fill.className = "fill";
+    b.appendChild(fill);
+    var ring = document.createElement("i");
+    ring.className = "ring";
+    b.appendChild(ring);
     var NS = "http://www.w3.org/2000/svg";
     var ck = document.createElementNS(NS, "svg");
     ck.setAttribute("class", "ck");
@@ -656,18 +659,49 @@
       updatedAt = Date.now();
       save();
       paintAll();
-      /* Der Sprung kommt NACH paintAll, weil paintAll die Klassen neu setzt. */
-      if (an) {
-        b.classList.remove("pop");
-        void b.offsetWidth;
-        b.classList.add("pop");
-        if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
-      }
+      /* Die Bewegung macht JavaScript, nicht CSS. Grund, gefunden am 20.09.:
+         auf Davids iPhone lief KEINE Animation. Ein CSS-Uebergang haengt an
+         prefers-reduced-motion und daran, welche Regel im Stylesheet gewinnt.
+         element.animate haengt an nichts davon. */
+      spiel(b, pa, an);
       planPush();
     });
     todayEl.appendChild(b);
     toggles.push(b);
   });
+
+  /* Ein Tipp, vier Bewegungen: die Fuellung springt aus der Mitte auf, der
+     Kreis federt einmal ueber 100 Prozent, ein Ring laeuft nach aussen weg,
+     der Haken zeichnet sich selbst. Beim Ausschalten laeuft alles kurz
+     rueckwaerts. */
+  var FEDER = "cubic-bezier(.34,1.56,.64,1)";
+  function spiel(b, pa, an){
+    var fill = b.querySelector(".fill"), ring = b.querySelector(".ring");
+    if (!fill || !fill.animate) return;                 /* sehr alter Browser */
+    [fill, ring, b, pa].forEach(function(el){
+      if (el && el.getAnimations) el.getAnimations().forEach(function(a){ a.cancel(); });
+    });
+    if (an) {
+      fill.animate([{ transform: "scale(0)", opacity: 0 },
+                    { transform: "scale(1.12)", opacity: 1, offset: .6 },
+                    { transform: "scale(1)", opacity: 1 }],
+                   { duration: 420, easing: FEDER, fill: "both" });
+      b.animate([{ transform: "scale(.8)" }, { transform: "scale(1.18)", offset: .55 },
+                 { transform: "scale(1)" }],
+                { duration: 420, easing: FEDER });
+      ring.animate([{ opacity: .55, transform: "scale(1)" },
+                    { opacity: 0, transform: "scale(2.05)" }],
+                   { duration: 520, easing: "cubic-bezier(.2,.7,.3,1)" });
+      if (pa) pa.animate([{ strokeDashoffset: 46 }, { strokeDashoffset: 0 }],
+                         { duration: 320, delay: 110, easing: "cubic-bezier(.25,.8,.3,1)", fill: "both" });
+      if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+    } else {
+      fill.animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(0)", opacity: 0 }],
+                   { duration: 180, easing: "ease", fill: "both" });
+      if (pa) pa.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: 46 }],
+                         { duration: 140, easing: "ease", fill: "both" });
+    }
+  }
 
   function paintTop(){
     var d = selDate(), dk = key(d);
