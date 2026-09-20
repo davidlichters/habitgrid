@@ -779,6 +779,25 @@
     }
   }
 
+  /* Nur die eine Zelle und den einen Knopf anfassen, nicht alle 2.499.
+     20.09.: diese Funktion hatte ich beim Aufraeumen der Diagnosezeile aus
+     Versehen mitgeloescht. Der Klickgriff rief sie weiter auf, brach mit einem
+     Fehler ab, und danach lief nichts mehr: kein Haken, keine Bewegung. */
+  function einzeln(h, dk, i){
+    var an = !!data[h.k][dk];
+    toggles[i].className = an ? "on" : "";
+    toggles[i].setAttribute("aria-pressed", an ? "true" : "false");
+    var g = grids[i];
+    if (!g) return;
+    for (var j = 0; j < g.cells.length; j++) {
+      if (g.cells[j].k !== dk) continue;
+      var cls = an ? "on" : "";
+      if (g.cells[j].i === selIdx) cls = cls ? cls + " now" : "now";
+      g.cells[j].el.className = cls;
+      break;
+    }
+  }
+
   function paintTop(){
     var d = selDate(), dk = key(d);
 
