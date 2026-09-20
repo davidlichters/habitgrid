@@ -7,7 +7,7 @@
  * Seite deutlich laenger fest. Deshalb holen Seiten und Skripte sich jetzt mit
  * `no-store`, also garantiert vom Server.
  */
-var CACHE = "habitgrid-v36";
+var CACHE = "habitgrid-v37";
 var FILES = ["./", "./index.html", "./icon.png", "./manifest.webmanifest",
              "./ico-connect.jpg", "./ico-disconnect.jpg", "./ico-refresh.jpg", "./ico-share.jpg", "./ico-info.png", "./sheet-bar.jpg", "./cloud.jpg",
              "./toggle-on.jpg", "./toggle-off.jpg", "./toggle-on.mp4", "./toggle-off.mp4"];
