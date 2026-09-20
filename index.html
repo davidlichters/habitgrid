@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Habit Tracker</title>
 
 <!-- Full screen on the home screen, no Safari chrome -->
@@ -338,16 +338,8 @@
      duenne Farbbaender direkt an den Kanten, jedes stark weichgezeichnet. Die
      Unschaerfe allein macht den Nebel, es gibt nichts, was die Mitte bedecken
      koennte. */
-  #flug .rand{position:absolute;inset:0;overflow:hidden;opacity:0}
-  #flug .rand i{position:absolute;display:block;filter:blur(26px)}
-  #flug .rand .o{top:-6px;left:-20px;right:-20px;height:16px;
-    background:linear-gradient(90deg,#ff5fa2,#ff9a3c,#ffe45c,#4fe3ff,#4a8dff,#c27dff)}
-  #flug .rand .u{bottom:-6px;left:-20px;right:-20px;height:16px;
-    background:linear-gradient(90deg,#c27dff,#4a8dff,#4fe3ff,#ffe45c,#ff9a3c,#ff5fa2)}
-  #flug .rand .l{left:-6px;top:-20px;bottom:-20px;width:16px;
-    background:linear-gradient(180deg,#ff5fa2,#c27dff,#4a8dff,#4fe3ff,#ffe45c,#ff9a3c)}
-  #flug .rand .r{right:-6px;top:-20px;bottom:-20px;width:16px;
-    background:linear-gradient(180deg,#ffe45c,#4fe3ff,#4a8dff,#c27dff,#ff5fa2,#ff9a3c)}
+  /* 21.09., David: der Regenbogenrand faellt weg. Dafuer stehen nach der
+     Welle alle sieben Kreise fuenf Sekunden lang in Gold. */
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 </style>
@@ -408,7 +400,7 @@
         </button>
       </div>
     </div>
-    <div class="status" id="status">v49, backup off</div>
+    <div class="status" id="status">v50, backup off</div>
 
   </div>
 
@@ -752,7 +744,7 @@
   }
   function handMalen(b, pa, fill, ring, an){
     b.__lauf = (b.__lauf || 0) + 1;
-    var meins = b.__lauf, t0 = 0, DAUER = an ? 900 : 200, zahl = 0;
+    var meins = b.__lauf, t0 = 0, DAUER = an ? 420 : 180, zahl = 0;
     /* 20.09.: ohne diese Zeile blitzt der fertige Haken EIN Bild lang auf und
        springt dann zurueck. Der Pfad beginnt am kurzen Arm, laeuft in die
        Spitze und von dort den langen Arm hinauf, also zeichnet er sich in
@@ -768,16 +760,11 @@
          nachweislich (25 Bilder in 400 ms, Animation bei 400 ms). Wenn er
          trotzdem nichts sieht, war die Bewegung zu klein. Also unuebersehbar:
          der Kreis geht auf das Doppelte und federt zurueck. */
-      fill.style.transform = "scale(" + f.toFixed(3) + ")";
+      fill.style.transform = "scale(" + Math.min(1, f).toFixed(3) + ")";
       fill.style.opacity = Math.min(1, p * 6).toFixed(2);
-      /* Puls: faengt bei 1 an, geht auf 1,55 und ist bei 70 Prozent wieder
-         genau bei 1. Die erste Fassung endete bei 2,0 und sprang am Schluss
-         zurueck, das waere ein sichtbarer Ruck gewesen. */
-      var puls = an ? 1 + 0.55 * Math.sin(Math.PI * Math.min(1, p / 0.7)) : 1;
-      b.style.transform = "scale(" + puls.toFixed(3) + ")";
-      b.style.zIndex = "9";
-      ring.style.transform = "scale(" + (1 + 3.2 * p).toFixed(3) + ")";
-      ring.style.opacity = an ? (0.85 * (1 - p)).toFixed(2) : "0";
+      /* 21.09., David: beim Tippen soll NUR der Haken kommen. Kein Puls, der
+         den Kreis dicker macht, und kein Ring, der nach aussen laeuft. */
+      ring.style.opacity = "0";
       /* Der Haken beginnt am kurzen Arm, laeuft in die Spitze und von dort den
          langen Arm hinauf. Beim Ausschalten genau rueckwaerts. */
       var gez = an ? Math.min(1, Math.max(0, (p - 0.25) / 0.45)) : 1 - p;
@@ -830,8 +817,9 @@
      ein Regenbogen, der durch die Reihe wandert. Das Maskottchen fliegt genau
      auf dem Kreis, der gerade rot ist. */
   var FARBEN = ["#ff3b30", "#ff9500", "#ffcc00", "#30d158", "#0a84ff", "#bf5af2"];
-  var MOMENT = 170;                 /* Millisekunden je Zeile seiner Tabelle */
-  var VORLAUF = 500;                /* Anflug von links bis zum ersten Kreis */
+  var MOMENT = 85;                  /* Millisekunden je Zeile seiner Tabelle */
+  var VORLAUF = 0;                  /* kein Anflug mehr, es fliegt nichts */
+  var GOLD = "#f7c948", GOLDZEIT = 5000;
   /* Davids Claude-Maskottchen aus WhatsApp, Pixel fuer Pixel abgelesen:
      das Bild ist ein Raster von 12 mal 8 Kloetzen in #d47e63, gemessen am
      Original (945 x 2048, Figur bei 174/828, 603 x 395). Als Raster gezeichnet
@@ -847,15 +835,6 @@
     if (document.getElementById("flug")) return;
     var box = document.createElement("div");
     box.id = "flug";
-    var rand = document.createElement("div");
-    rand.className = "rand";
-    /* 21.09.: das Maskottchen liegt NICHT mehr auf einer Leinwand, sondern ist
-       ein eigenes Element. Auf der Leinwand sass es immer ein Stueck zu tief,
-       und in dieser Vorschau lieferten weder getImageData noch getComputedStyle
-       brauchbare Werte, um den Versatz zu messen. Ein Element, das direkt auf
-       die gemessene Mitte des Kreises gesetzt wird, kann gar nicht danebenliegen. */
-    rand.innerHTML = '<i class="o"></i><i class="u"></i><i class="l"></i><i class="r"></i>';
-    box.appendChild(rand);
     document.body.appendChild(box);
 
 
@@ -866,7 +845,6 @@
     function bild(jetzt){
       if (!t0) t0 = jetzt;
       var ms = jetzt - t0, p = Math.min(1, ms / DAUER);
-      rand.style.opacity = (Math.sin(Math.PI * Math.min(1, p / 0.92)) * 0.85).toFixed(3);
 
       /* Die Tabelle: Kreis i zeigt Farbe (Moment - i), sonst sein Gruen. */
       var mz = (ms - VORLAUF) / MOMENT;                 /* Moment, mit Nachkomma */
@@ -879,8 +857,14 @@
         b.style.borderColor = c;
       });
 
-      if (p < 1) naechstesBild(bild);
-      else { farbenZurueck(); box.remove(); }
+      if (p < 1) { naechstesBild(bild); return; }
+      /* Der Lohn fuer sieben von sieben: fuenf Sekunden Gold, dann zurueck. */
+      toggles.forEach(function(b){
+        var f = b.querySelector(".fill");
+        if (f) f.style.background = GOLD;
+        b.style.borderColor = GOLD;
+      });
+      setTimeout(function(){ farbenZurueck(); box.remove(); }, GOLDZEIT);
     }
     naechstesBild(bild);
   }
@@ -979,7 +963,7 @@
 
   /* 21.09., David: die Fassungsnummer gehoert VOR "saved", also "v46 saved
      23:48". Keine eigene Zeile mehr, sondern dort, wo er ohnehin hinsieht. */
-  var FASSUNG = "v49";
+  var FASSUNG = "v50";
   function clock(){ var d = new Date(); return d2(d.getHours()) + ":" + d2(d.getMinutes()); }
   function say(text, warn){
     statusEl.textContent = text;
