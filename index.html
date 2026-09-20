@@ -337,7 +337,7 @@
   /* Die Bewegungsbremse gilt fuer die Seite, NICHT fuer die sieben Kreise:
      die bewegt JavaScript, und David hat die Animation ausdruecklich verlangt. */
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-  .ver{margin-top:8px;text-align:center;font-size:11px;color:var(--ios-grey);letter-spacing:.02em}
+
 </style>
 </head>
 <body>
@@ -397,8 +397,7 @@
       </div>
     </div>
     <div class="status" id="status">Backup off</div>
-    <div class="ver">Fassung 37</div>
-    <div class="ver" id="diag">wird gemessen</div>
+
   </div>
 
     <div class="menubar" id="menubar">
@@ -676,7 +675,6 @@
          prefers-reduced-motion und daran, welche Regel im Stylesheet gewinnt.
          element.animate haengt an nichts davon. */
       spiel(b, pa, an);
-      pruefen(b, an);
       planPush();
     });
     todayEl.appendChild(b);
@@ -709,8 +707,6 @@
         + (document.hidden ? ", Seite verdeckt" : "")
         + (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches ? ", Bewegung reduziert" : "")
         + (kannRaf ? "" : ", also CSS-Weg");
-      var d = document.getElementById("diag");
-      if (d) d.textContent = testErgebnis;
       try { ziel.remove(); if (an) an.cancel(); } catch (e) {}
     }
     setTimeout(function(){ if (!zahl) fertig(0); }, 1200);
@@ -723,6 +719,13 @@
   }
   function handMalen(b, pa, fill, ring){
     var meins = ++laufNr, t0 = 0, DAUER = 900, zahl = 0;
+    /* 20.09.: ohne diese Zeile blitzt der fertige Haken EIN Bild lang auf und
+       springt dann zurueck. Der Pfad beginnt am kurzen Arm, laeuft in die
+       Spitze und von dort den langen Arm hinauf, also zeichnet er sich in
+       genau der Reihenfolge, in der man ihn mit der Hand malt. */
+    if (pa) pa.style.strokeDashoffset = "46";
+    fill.style.transform = "scale(0)";
+    fill.style.opacity = "0";
     function bild(jetzt){
       if (meins !== laufNr) return;
       if (!t0) t0 = jetzt;
@@ -773,43 +776,6 @@
                    { duration: 180, easing: "ease", fill: "both" });
       if (pa) pa.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: 46 }],
                          { duration: 140, easing: "ease", fill: "both" });
-    }
-  }
-
-  /* 20.09.: David sieht auf seinem iPhone Fassung 31 und trotzdem keine
-     Bewegung. Statt weiter zu raten schreibt die App auf, was beim letzten
-     Tipp wirklich lief. Steht in den Einstellungen unter der Fassung. */
-  function pruefen(b, an){
-    var d = document.getElementById("diag");
-    if (!d) return;
-    var l;
-    try { l = b.getAnimations ? b.getAnimations({ subtree: true }) : null; } catch (e) { l = null; }
-    if (!l) { d.textContent = "Letzter Tipp: getAnimations fehlt"; return; }
-    var js = 0, css = 0;
-    for (var i = 0; i < l.length; i++) {
-      if (l[i].constructor && l[i].constructor.name === "CSSAnimation") css++; else js++;
-    }
-    var zeigen = function(){
-      d.textContent = (kannRaf ? "Hand: " + bilder + " Bilder" : "Blatt: " + css + " CSS")
-        + " | Start: " + testErgebnis;
-    };
-    zeigen();
-    if (an) setTimeout(zeigen, 900);
-  }
-
-  /* Nur die eine Zelle und den einen Knopf anfassen. */
-  function einzeln(h, dk, i){
-    var an = !!data[h.k][dk];
-    toggles[i].className = an ? "on" : "";
-    toggles[i].setAttribute("aria-pressed", an ? "true" : "false");
-    var g = grids[i];
-    if (!g) return;
-    for (var j = 0; j < g.cells.length; j++) {
-      if (g.cells[j].k !== dk) continue;
-      var cls = an ? "on" : "";
-      if (g.cells[j].i === selIdx) cls = cls ? cls + " now" : "now";
-      g.cells[j].el.className = cls;
-      break;
     }
   }
 
