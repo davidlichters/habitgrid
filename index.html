@@ -402,7 +402,7 @@
         </button>
       </div>
     </div>
-    <div class="status" id="status">v47, backup off</div>
+    <div class="status" id="status">v48, backup off</div>
 
   </div>
 
@@ -681,15 +681,13 @@
          prefers-reduced-motion und daran, welche Regel im Stylesheet gewinnt.
          element.animate haengt an nichts davon. */
       spiel(b, pa, an);
-      if (an && HABITS.every(function(x){ return data[x.k][dk]; })) {
-        var merk = "habitgrid.flug." + dk;
-        var schon = false;
-        try { schon = localStorage.getItem(merk) === "1"; } catch (e) {}
-        if (!schon) {
-          try { localStorage.setItem(merk, "1"); } catch (e) {}
-          regenbogenflug();
-        }
-      }
+      /* 21.09.: der Flug kam bei David nicht, obwohl alle sieben gruen waren.
+         Schuld war meine Tagessperre im Speicher: der Tag stand schon einmal
+         auf 7 von 7, waehrend ich die Fassungen durchgetestet habe, und danach
+         war er fuer immer verbraucht. Die Sperre ist weg und war ueberfluessig:
+         dieser Zweig wird nur erreicht, wenn gerade EINGESCHALTET wurde und
+         danach alle sieben stehen, also genau im Moment des Vollwerdens. */
+      if (an && HABITS.every(function(x){ return data[x.k][dk]; })) regenbogenflug();
       planPush();
     });
     todayEl.appendChild(b);
@@ -1015,7 +1013,7 @@
 
   /* 21.09., David: die Fassungsnummer gehoert VOR "saved", also "v46 saved
      23:48". Keine eigene Zeile mehr, sondern dort, wo er ohnehin hinsieht. */
-  var FASSUNG = "v47";
+  var FASSUNG = "v48";
   function clock(){ var d = new Date(); return d2(d.getHours()) + ":" + d2(d.getMinutes()); }
   function say(text, warn){
     statusEl.textContent = text;
