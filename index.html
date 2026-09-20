@@ -388,7 +388,7 @@
       </div>
     </div>
     <div class="status" id="status">Backup off</div>
-    <div class="ver">Fassung 30</div>
+    <div class="ver">Fassung 31</div>
   </div>
 
     <div class="menubar" id="menubar">
@@ -1194,8 +1194,24 @@
 <script>
 /* Offline use: always loads the fresh version, falls back to the last one without a network. */
 if ("serviceWorker" in navigator) {
+  /* 20.09.2026: Einmal registrieren reichte nicht. Auf dem iPhone kam keine
+     neue Fassung an, egal wie oft David die App schloss. Jetzt wird bei jedem
+     Start und bei jedem Zurueckholen aus dem Hintergrund nachgefragt, und
+     sobald ein neuer Dienst uebernimmt, laedt die Seite EINMAL neu. */
+  var neugeladen = false;
+  navigator.serviceWorker.addEventListener("controllerchange", function(){
+    if (neugeladen) return;
+    neugeladen = true;
+    location.reload();
+  });
   window.addEventListener("load", function(){
-    navigator.serviceWorker.register("sw.js").catch(function(){});
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(function(reg){
+      reg.update();
+      document.addEventListener("visibilitychange", function(){
+        if (!document.hidden) reg.update();
+      });
+      setInterval(function(){ reg.update(); }, 120000);
+    }).catch(function(){});
   });
 }
 </script>
