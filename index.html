@@ -735,7 +735,11 @@
          der Kreis geht auf das Doppelte und federt zurueck. */
       fill.style.transform = "scale(" + f.toFixed(3) + ")";
       fill.style.opacity = Math.min(1, p * 6).toFixed(2);
-      b.style.transform = "scale(" + (0.6 + 1.4 * f - 0.0).toFixed(3) + ")";
+      /* Puls: faengt bei 1 an, geht auf 1,55 und ist bei 70 Prozent wieder
+         genau bei 1. Die erste Fassung endete bei 2,0 und sprang am Schluss
+         zurueck, das waere ein sichtbarer Ruck gewesen. */
+      var puls = 1 + 0.55 * Math.sin(Math.PI * Math.min(1, p / 0.7));
+      b.style.transform = "scale(" + puls.toFixed(3) + ")";
       b.style.zIndex = "9";
       ring.style.transform = "scale(" + (1 + 3.2 * p).toFixed(3) + ")";
       ring.style.opacity = (0.85 * (1 - p)).toFixed(2);
