@@ -116,7 +116,32 @@
     transition:transform .14s ease,background-color .14s ease,border-color .14s ease;
     touch-action:manipulation;
   }
-  .today button.on{background:var(--c);border-color:var(--c)}
+  .today button{position:relative;overflow:visible}
+  /* Die Fuellung ist ein eigener Kreis, der aus der Mitte aufspringt. */
+  .today button::before{
+    content:"";position:absolute;inset:-1.5px;border-radius:50%;
+    background:var(--c);transform:scale(0);opacity:0;
+    transition:transform .34s cubic-bezier(.34,1.56,.64,1),opacity .18s ease;
+  }
+  .today button.on::before{transform:scale(1);opacity:1}
+  .today button.on{border-color:var(--c)}
+  /* Der Haken zeichnet sich kurz nach der Fuellung. */
+  .today button .ck{
+    position:absolute;left:50%;top:50%;width:36%;height:19%;
+    border-left:2.5px solid #fff;border-bottom:2.5px solid #fff;border-radius:1px;
+    transform:translate(-50%,-62%) rotate(-45deg) scale(0);opacity:0;
+    transition:transform .26s cubic-bezier(.34,1.56,.64,1) .09s,opacity .12s ease .09s;
+  }
+  .today button.on .ck{transform:translate(-50%,-62%) rotate(-45deg) scale(1);opacity:1}
+  /* Ein Ring laeuft einmal nach aussen und verschwindet. */
+  .today button::after{
+    content:"";position:absolute;inset:-1.5px;border-radius:50%;
+    border:2px solid var(--c);opacity:0;pointer-events:none;
+  }
+  .today button.pop::after{animation:ring .52s cubic-bezier(.2,.7,.3,1) forwards}
+  .today button.pop{animation:pop .42s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes pop{0%{transform:scale(.8)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+  @keyframes ring{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(2)}}
   .today button:active{transform:scale(.9)}
   .today button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
@@ -235,6 +260,19 @@
   }
   .ncell::placeholder{color:#fff}
   .card.notable .grid{cursor:pointer}
+
+  /* Training: Datum links klein, dann zwei Spalten zum Tippen. */
+  .ttable{
+    flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);
+    align-content:start;column-gap:14px;
+    padding:4px 20px calc(20px + env(safe-area-inset-bottom));
+  }
+  .thead{
+    font-size:13px;font-weight:700;letter-spacing:.01em;color:#8E8E93;
+    padding:2px 0 10px;border-bottom:1px solid var(--ios-sep);
+  }
+  .ttable .ncell{font-variant-numeric:tabular-nums}
 
   /* ---------- iOS style sheet ---------- */
   .sheet{
@@ -361,6 +399,12 @@
   <div class="ntable" id="ntable"></div>
 </div>
 
+<!-- Training page behind the blue grid -->
+<div class="notes" id="train" role="dialog" aria-modal="true" aria-label="Training Log">
+  <h2 class="ntitle"><button type="button" id="trainBack" style="color:#32ADE6">Training Log</button></h2>
+  <div class="ttable" id="ttable"></div>
+</div>
+
 <!-- Connect sheet -->
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Connect to GitHub">
   <div class="sheetbar">
@@ -396,6 +440,8 @@
   var BKEY = "habitgrid.hidebar";
   var updatedAt = 0;
   var notes = {};
+  /* Training: eine Zeile je Tag, { "2026-09-20": { c:"3200", p:"135" } } */
+  var meals = {};
 
   var WEEKS = 51;
   var CELLS = WEEKS * 7;              /* 357 */
@@ -434,6 +480,7 @@
           take(p.days);
           updatedAt = p.updatedAt || 0;
           notes = (p.notes && typeof p.notes === "object" && !Array.isArray(p.notes)) ? p.notes : {};
+          meals = (p.meals && typeof p.meals === "object" && !Array.isArray(p.meals)) ? p.meals : {};
           return;
         }
       }
@@ -442,7 +489,7 @@
     } catch (e) {}
   }
   function save(){
-    try { localStorage.setItem(KEY, JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes, meals: meals })); } catch (e) {}
   }
   function remember(k, v){
     try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {}
@@ -574,19 +621,30 @@
 
   HABITS.forEach(function(h){
     var s = document.createElement("span");
-    s.textContent = h.k;
+    s.textContent = h.k.toLowerCase();
     lettersEl.appendChild(s);
 
     var b = document.createElement("button");
     b.type = "button";
     b.style.setProperty("--c", h.c);
     b.setAttribute("aria-label", "Habit " + h.k);
+    var ck = document.createElement("i");
+    ck.className = "ck";
+    b.appendChild(ck);
     b.addEventListener("click", function(){
       var dk = key(selDate());
+      var an = !data[h.k][dk];
       if (data[h.k][dk]) delete data[h.k][dk]; else data[h.k][dk] = 1;
       updatedAt = Date.now();
       save();
       paintAll();
+      /* Der Sprung kommt NACH paintAll, weil paintAll die Klassen neu setzt. */
+      if (an) {
+        b.classList.remove("pop");
+        void b.offsetWidth;
+        b.classList.add("pop");
+        if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+      }
       planPush();
     });
     todayEl.appendChild(b);
@@ -623,7 +681,7 @@
     head.className = "head";
     var glyph = document.createElement("div");
     glyph.className = "glyph";
-    glyph.textContent = h.k;
+    glyph.textContent = h.k.toLowerCase();
     head.appendChild(glyph);
     card.appendChild(head);
 
@@ -644,6 +702,10 @@
     if (h.k === "G") {
       card.className = "card notable";
       grid.addEventListener("click", openNotes);
+    }
+    if (h.k === "T") {
+      card.className = "card notable";
+      grid.addEventListener("click", openTrain);
     }
     cardsEl.appendChild(card);
     grids.push({ h: h, cells: cells });
@@ -688,7 +750,7 @@
       "Content-Type": "application/json"
     };
   }
-  function payload(){ return JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes }, null, 1); }
+  function payload(){ return JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes, meals: meals }, null, 1); }
 
   function planPush(){
     if (!stored(TKEY)) return;
@@ -742,7 +804,9 @@
         if ((p.updatedAt || 0) > updatedAt) {
           take(p.days);
           notes = (p.notes && typeof p.notes === "object" && !Array.isArray(p.notes)) ? p.notes : {};
+          meals = (p.meals && typeof p.meals === "object" && !Array.isArray(p.meals)) ? p.meals : {};
           buildTable();
+          buildMeals();
           updatedAt = p.updatedAt || 0;
           save();
           paintAll();
@@ -936,7 +1000,88 @@
 
   document.addEventListener("keydown", function(e){
     if (e.key === "Escape" && notesEl.classList.contains("open")) closeNotes();
+    if (e.key === "Escape" && trainEl.classList.contains("open")) closeTrain();
   });
+
+  /* ---------- training page ---------- */
+
+  var trainEl = document.getElementById("train");
+  var ttable = document.getElementById("ttable");
+  var trainTimer = null, trainTimerOut = null;
+
+  function mealsObj(){
+    if (meals && typeof meals === "object" && !Array.isArray(meals)) return meals;
+    meals = {};
+    return meals;
+  }
+  /* Oberste Zeile ist die Ueberschrift, darunter je Tag eine neue Zeile,
+     der neueste Tag direkt unter der Ueberschrift. */
+  function buildMeals(){
+    var o = mealsObj();
+    var heute = key(today);
+    var tage = Object.keys(o).filter(function(k){ return o[k] && (o[k].c || o[k].p); });
+    if (tage.indexOf(heute) < 0) tage.push(heute);
+    tage.sort().reverse();
+
+    ttable.innerHTML = "";
+    ["", "Calories", "Protein"].forEach(function(txt){
+      var h = document.createElement("div");
+      h.className = "thead";
+      h.textContent = txt;
+      ttable.appendChild(h);
+    });
+
+    tage.forEach(function(tag){
+      var d = document.createElement("div");
+      d.className = "ndate";
+      d.textContent = tag;
+      ttable.appendChild(d);
+
+      ["c", "p"].forEach(function(feld){
+        var i = document.createElement("input");
+        i.className = "ncell";
+        i.type = "text";
+        i.inputMode = "numeric";
+        i.autocomplete = "off";
+        i.spellcheck = false;
+        i.value = (o[tag] && o[tag][feld]) || "";
+        i.dataset.day = tag;
+        i.dataset.feld = feld;
+        i.addEventListener("input", mealChanged);
+        ttable.appendChild(i);
+      });
+    });
+  }
+  function mealChanged(e){
+    var o = mealsObj();
+    var tag = e.target.dataset.day, feld = e.target.dataset.feld;
+    if (!o[tag]) o[tag] = {};
+    if (e.target.value) o[tag][feld] = e.target.value; else delete o[tag][feld];
+    if (!o[tag].c && !o[tag].p) delete o[tag];
+    updatedAt = Date.now();
+    clearTimeout(trainTimer);
+    trainTimer = setTimeout(function(){ save(); planPush(); }, 400);
+  }
+
+  function openTrain(){
+    buildMeals();
+    clearTimeout(trainTimerOut);
+    trainEl.style.transition = "";
+    trainEl.style.transform = "";
+    trainEl.classList.add("mounted");
+    void trainEl.offsetWidth;
+    trainEl.classList.add("open");
+    setTimeout(function(){ var f = ttable.querySelector(".ncell"); if (f) f.focus(); }, 320);
+  }
+  function closeTrain(){
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    trainEl.style.transition = "";
+    trainEl.style.transform = "";
+    trainEl.classList.remove("open");
+    clearTimeout(trainTimerOut);
+    trainTimerOut = setTimeout(function(){ trainEl.classList.remove("mounted"); }, 320);
+  }
+  document.getElementById("trainBack").addEventListener("click", closeTrain);
 
   /* ---------- connect sheet ---------- */
 
