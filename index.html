@@ -402,7 +402,7 @@
         </button>
       </div>
     </div>
-    <div class="status" id="status">Backup off</div>
+    <div class="status" id="status">v47, backup off</div>
 
   </div>
 
@@ -1013,6 +1013,9 @@
 
   var statusEl = document.getElementById("status");
 
+  /* 21.09., David: die Fassungsnummer gehoert VOR "saved", also "v46 saved
+     23:48". Keine eigene Zeile mehr, sondern dort, wo er ohnehin hinsieht. */
+  var FASSUNG = "v47";
   function clock(){ var d = new Date(); return d2(d.getHours()) + ":" + d2(d.getMinutes()); }
   function say(text, warn){
     statusEl.textContent = text;
@@ -1036,7 +1039,7 @@
   }
 
   function push(){
-    if (!stored(TKEY)) { say("Backup off"); return Promise.resolve(); }
+    if (!stored(TKEY)) { say(FASSUNG + ", backup off"); return Promise.resolve(); }
     if (busy) { again = true; return Promise.resolve(); }
     busy = true;
     var id = stored(GKEY);
@@ -1053,7 +1056,7 @@
       return r.json();
     }).then(function(j){
       if (j && j.id) remember(GKEY, j.id);
-      say("Saved " + clock());
+      say(FASSUNG + " saved " + clock());
     }).catch(function(e){
       say(e.message || "Not saved", true);
     }).then(function(){
@@ -1088,7 +1091,7 @@
           paintAll();
           say("Loaded from GitHub " + clock());
         } else if (atStart) {
-          say("Saved " + clock());
+          say(FASSUNG + " saved " + clock());
         } else {
           say("This phone is newer, nothing loaded");
         }
@@ -1114,7 +1117,7 @@
   document.getElementById("rowDisconnect").addEventListener("click", function(){
     remember(TKEY, "");
     remember(GKEY, "");
-    say("Backup off");
+    say(FASSUNG + ", backup off");
   });
   document.getElementById("rowRefresh").addEventListener("click", function(){ pull(false); });
 
@@ -1412,7 +1415,7 @@
   selbsttest();
   setBare(!!stored(BKEY), false);
   paintAll();
-  if (stored(TKEY)) { say("Connecting ..."); pull(true); } else { say("Backup off"); }
+  if (stored(TKEY)) { say("Connecting ..."); pull(true); } else { say(FASSUNG + ", backup off"); }
 })();
 </script>
 
