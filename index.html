@@ -679,7 +679,7 @@
      der Haken zeichnet sich selbst. Beim Ausschalten laeuft alles kurz
      rueckwaerts. */
   var FEDER = "cubic-bezier(.34,1.56,.64,1)";
-  var bilder = 0, laufNr = 0;
+  var bilder = 0;
   var kannRaf = true, testErgebnis = "wird gemessen";
   function selbsttest(){
     var t0 = 0, zahl = 0, ziel = document.createElement("div");
@@ -725,14 +725,15 @@
     if (pa) pa.style.strokeDashoffset = an ? "0" : "46";
   }
   function handMalen(b, pa, fill, ring, an){
-    var meins = ++laufNr, t0 = 0, DAUER = an ? 900 : 200, zahl = 0;
+    b.__lauf = (b.__lauf || 0) + 1;
+    var meins = b.__lauf, t0 = 0, DAUER = an ? 900 : 200, zahl = 0;
     /* 20.09.: ohne diese Zeile blitzt der fertige Haken EIN Bild lang auf und
        springt dann zurueck. Der Pfad beginnt am kurzen Arm, laeuft in die
        Spitze und von dort den langen Arm hinauf, also zeichnet er sich in
        genau der Reihenfolge, in der man ihn mit der Hand malt. */
     stellen(b, pa, fill, ring, !an);              /* Startbild, vor dem ersten Zeichnen */
     function bild(jetzt){
-      if (meins !== laufNr) return;
+      if (meins !== b.__lauf) return;
       if (!t0) t0 = jetzt;
       var p = Math.min(1, (jetzt - t0) / DAUER);
       zahl++;
