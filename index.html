@@ -400,7 +400,7 @@
         </button>
       </div>
     </div>
-    <div class="status" id="status">v50, backup off</div>
+    <div class="status" id="status">v51, backup off</div>
 
   </div>
 
@@ -819,7 +819,15 @@
   var FARBEN = ["#ff3b30", "#ff9500", "#ffcc00", "#30d158", "#0a84ff", "#bf5af2"];
   var MOMENT = 85;                  /* Millisekunden je Zeile seiner Tabelle */
   var VORLAUF = 0;                  /* kein Anflug mehr, es fliegt nichts */
-  var GOLD = "#f7c948", GOLDZEIT = 5000;
+  var GOLD = [247, 201, 72];        /* #f7c948 */
+  var RUHE = [48, 209, 88];         /* #30d158, das normale Gruen */
+  var GOLDZEIT = 5000;              /* so lange bleibt es voll golden */
+  var ABKLINGEN = 10000;            /* und so lange dauert der Weg zurueck */
+  function misch(a, b, t){
+    return "rgb(" + Math.round(a[0] + (b[0] - a[0]) * t) + ","
+                  + Math.round(a[1] + (b[1] - a[1]) * t) + ","
+                  + Math.round(a[2] + (b[2] - a[2]) * t) + ")";
+  }
   /* Davids Claude-Maskottchen aus WhatsApp, Pixel fuer Pixel abgelesen:
      das Bild ist ein Raster von 12 mal 8 Kloetzen in #d47e63, gemessen am
      Original (945 x 2048, Figur bei 174/828, 603 x 395). Als Raster gezeichnet
@@ -850,21 +858,40 @@
       var mz = (ms - VORLAUF) / MOMENT;                 /* Moment, mit Nachkomma */
       var m = Math.floor(mz);
       toggles.forEach(function(b, i){
+        /* 21.09., David: hinter dem Violett faengt das Gold SOFORT an, es
+           soll nicht noch eine Sekunde Gruen dazwischen liegen. */
         var k = m - i;
         var f = b.querySelector(".fill");
-        var c = (k >= 0 && k < FARBEN.length) ? FARBEN[k] : "";
+        var c = k < 0 ? "" : (k < FARBEN.length ? FARBEN[k] : misch(GOLD, GOLD, 0));
         if (f) f.style.background = c;
         b.style.borderColor = c;
       });
 
       if (p < 1) { naechstesBild(bild); return; }
-      /* Der Lohn fuer sieben von sieben: fuenf Sekunden Gold, dann zurueck. */
+      /* Sieben von sieben: erst voll Gold stehen lassen, dann ueber zehn
+         Sekunden weich nach Gruen zurueck, nicht umschalten. */
+      var gold = misch(GOLD, GOLD, 0);
       toggles.forEach(function(b){
         var f = b.querySelector(".fill");
-        if (f) f.style.background = GOLD;
-        b.style.borderColor = GOLD;
+        if (f) f.style.background = gold;
+        b.style.borderColor = gold;
       });
-      setTimeout(function(){ farbenZurueck(); box.remove(); }, GOLDZEIT);
+      var g0 = 0;
+      function abklingen(jetzt){
+        if (!g0) g0 = jetzt;
+        var v = jetzt - g0;
+        if (v < GOLDZEIT) { naechstesBild(abklingen); return; }
+        var q = Math.min(1, (v - GOLDZEIT) / ABKLINGEN);
+        var c = misch(GOLD, RUHE, q);
+        toggles.forEach(function(b){
+          var f = b.querySelector(".fill");
+          if (f) f.style.background = c;
+          b.style.borderColor = c;
+        });
+        if (q < 1) naechstesBild(abklingen);
+        else { farbenZurueck(); box.remove(); }
+      }
+      naechstesBild(abklingen);
     }
     naechstesBild(bild);
   }
@@ -963,7 +990,7 @@
 
   /* 21.09., David: die Fassungsnummer gehoert VOR "saved", also "v46 saved
      23:48". Keine eigene Zeile mehr, sondern dort, wo er ohnehin hinsieht. */
-  var FASSUNG = "v50";
+  var FASSUNG = "v51";
   function clock(){ var d = new Date(); return d2(d.getHours()) + ":" + d2(d.getMinutes()); }
   function say(text, warn){
     statusEl.textContent = text;
