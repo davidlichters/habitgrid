@@ -569,6 +569,7 @@
           notes = (p.notes && typeof p.notes === "object" && !Array.isArray(p.notes)) ? p.notes : {};
           meals = (p.meals && typeof p.meals === "object" && !Array.isArray(p.meals)) ? p.meals : {};
           gym = (p.gym && typeof p.gym === "object" && !Array.isArray(p.gym)) ? p.gym : {};
+          if (typeof gymUmbenennen === "function" && gymUmbenennen()) { try { save(); } catch (e) {} }
           return;
         }
       }
@@ -1128,6 +1129,7 @@
           notes = (p.notes && typeof p.notes === "object" && !Array.isArray(p.notes)) ? p.notes : {};
           meals = (p.meals && typeof p.meals === "object" && !Array.isArray(p.meals)) ? p.meals : {};
           gym = (p.gym && typeof p.gym === "object" && !Array.isArray(p.gym)) ? p.gym : {};
+          if (typeof gymUmbenennen === "function" && gymUmbenennen()) { try { save(); } catch (e) {} }
           buildTable();
           buildMeals();
           if (typeof gymListe === "function") gymListe();
@@ -1468,6 +1470,53 @@
   }
   var gymOffen = null, gymTimer = null;
   var glisteEl = document.getElementById("gliste");
+
+  /* 22.09.2026, mein Fehler: die Saetze haengen am Uebungsnamen. Als ich die
+     Namen auf Englisch umgestellt habe, standen Davids Eintraege noch unter
+     den deutschen Namen und waren damit unsichtbar. Diese Tabelle benennt sie
+     beim Laden um, einmal und dauerhaft. Sie bleibt stehen, weil eine alte
+     Kopie aus dem Gist jederzeit wieder deutsche Namen mitbringen kann. */
+  var GUMBENANNT = {
+    "Kniebeuge": "Squat",
+    "Schrägbankdrücken Kurzhantel": "Incline dumbbell press",
+    "Langhantelrudern": "Barbell row",
+    "Beinbeuger": "Leg curl",
+    "Seitheben": "Lateral raise",
+    "Trizeps über Kopf": "Overhead triceps extension",
+    "Bauch": "Abs",
+    "Rumänisches Kreuzheben": "Romanian deadlift",
+    "Klimmzüge": "Pull-ups",
+    "Flachbankdrücken Langhantel": "Barbell bench press",
+    "Beinpresse": "Leg press",
+    "Bizeps Kurzhantel": "Dumbbell curl",
+    "Frontkniebeuge oder Beinpresse": "Front squat or leg press",
+    "Schulterdrücken Kurzhantel": "Dumbbell shoulder press",
+    "Latzug eng": "Close-grip lat pulldown",
+    "Dips oder Schrägbank Kurzhantel": "Dips or incline dumbbell press",
+    "Beinstrecker": "Leg extension",
+    "Face Pulls": "Face pulls",
+    "Wadenheben": "Calf raise"
+  };
+  function gymUmbenennen(){
+    var o = gym, geaendert = false;
+    if (!o || typeof o !== "object") return false;
+    for (var id in o) {
+      var e = o[id];
+      if (!e || !e.saetze) continue;
+      for (var alt in GUMBENANNT) {
+        if (!Object.prototype.hasOwnProperty.call(e.saetze, alt)) continue;
+        var neu = GUMBENANNT[alt];
+        /* Steht unter dem englischen Namen schon etwas Ausgefuelltes, gewinnt
+           das Neue; sonst zieht der alte Eintrag um. */
+        var vollNeu = false;
+        if (e.saetze[neu]) e.saetze[neu].forEach(function(x){ if (x && x.kg !== "" && x.wdh !== "") vollNeu = true; });
+        if (!vollNeu) e.saetze[neu] = e.saetze[alt];
+        delete e.saetze[alt];
+        geaendert = true;
+      }
+    }
+    return geaendert;
+  }
 
   function gymObj(){
     if (gym && typeof gym === "object" && !Array.isArray(gym)) return gym;
