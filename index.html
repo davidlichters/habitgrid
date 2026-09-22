@@ -280,6 +280,60 @@
   /* Volles Datum, dafuer etwas kleiner, damit vier Spalten auf 390 px passen. */
   .ttable .ndate{padding-right:10px;font-size:14px;color:#8E8E93}
 
+  /* ---------- Wahl zwischen Ernaehrung und Training, 22.09.2026 ----------
+     David: beim T nicht direkt die Kalorien, sondern zuerst zwei Knoepfe. */
+  .wahl{
+    flex:1;display:flex;flex-direction:column;gap:12px;
+    padding:8px 20px calc(20px + env(safe-area-inset-bottom));
+  }
+  .wahl button{
+    appearance:none;border:0;cursor:pointer;font-family:inherit;text-align:left;
+    background:var(--ios-ground);border-radius:16px;padding:20px;
+    display:flex;align-items:center;gap:16px;color:#000;
+  }
+  .wahl button:active{opacity:.6}
+  .wahl .buchstabe{
+    font-size:34px;font-weight:700;letter-spacing:-.04em;color:#32ADE6;
+    width:34px;flex:0 0 auto;text-align:center;line-height:1;
+  }
+  .wahl .was{font-size:19px;font-weight:600;letter-spacing:-.02em}
+  .wahl .was span{display:block;font-size:14px;font-weight:400;color:#8E8E93}
+
+  /* ---------- Trainingsprotokoll ---------- */
+  .gliste{
+    flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:4px 20px calc(20px + env(safe-area-inset-bottom));
+  }
+  .gkarte{
+    appearance:none;border:0;cursor:pointer;font-family:inherit;text-align:left;
+    width:100%;background:var(--ios-ground);border-radius:14px;padding:13px 14px;
+    margin-bottom:8px;display:flex;align-items:center;gap:12px;color:#000;
+  }
+  .gkarte:active{opacity:.6}
+  .gpunkt{width:11px;height:11px;border-radius:50%;background:#D2D2D7;flex:0 0 auto}
+  .gpunkt.fertig{background:#30D158}
+  .gpunkt.teil{background:#FFB020}
+  .gkarte b{font-size:16px;font-weight:600;display:block}
+  .gkarte .gwo{font-size:13px;color:#8E8E93}
+  .guebung{border-top:1px solid var(--ios-sep);padding:14px 0 6px}
+  .guebung h3{margin:0;font-size:17px;font-weight:600}
+  .gziel{color:#8E8E93;font-size:13px;margin:1px 0 8px}
+  .gletzt{color:#32ADE6;font-size:13px;margin:0 0 8px}
+  .gsatz{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .gsatz .gnr{width:20px;color:#8E8E93;font-size:13px;flex:0 0 auto}
+  .gsatz .gfeld{flex:1 1 0;display:flex;align-items:center;gap:6px;min-width:0}
+  .gsatz input{
+    appearance:none;font-family:inherit;font-size:17px;padding:9px 10px;
+    border:1px solid var(--line);border-radius:10px;background:#fff;color:#000;
+    width:100%;min-width:0;font-variant-numeric:tabular-nums;
+  }
+  .gsatz .geh{color:#8E8E93;font-size:13px;flex:0 0 auto}
+  .gfertig{
+    appearance:none;border:0;cursor:pointer;font-family:inherit;font-size:16px;
+    font-weight:600;border-radius:12px;padding:13px 16px;background:#32ADE6;
+    color:#fff;width:100%;margin:16px 0 8px;
+  }
+
   /* ---------- iOS style sheet ---------- */
   .sheet{
     display:none;position:fixed;inset:0;z-index:50;background:#F2F1F5;
@@ -421,9 +475,28 @@
 </div>
 
 <!-- Training page behind the blue grid -->
-<div class="notes" id="train" role="dialog" aria-modal="true" aria-label="Training Log">
-  <h2 class="ntitle"><button type="button" id="trainBack" style="color:#32ADE6">Training Log</button></h2>
+<div class="notes" id="train" role="dialog" aria-modal="true" aria-label="Training und Ernaehrung">
+  <h2 class="ntitle"><button type="button" id="trainBack" style="color:#32ADE6">Training</button></h2>
+  <div class="wahl">
+    <button type="button" id="waehleE">
+      <span class="buchstabe">e</span>
+      <span class="was">Ernährung<span>Gewicht, Kalorien, Protein</span></span>
+    </button>
+    <button type="button" id="waehleT">
+      <span class="buchstabe">t</span>
+      <span class="was">Training<span>Gewicht und Wiederholungen je Satz</span></span>
+    </button>
+  </div>
+</div>
+
+<div class="notes" id="food" role="dialog" aria-modal="true" aria-label="Ernaehrung">
+  <h2 class="ntitle"><button type="button" id="foodBack" style="color:#32ADE6">Ernährung</button></h2>
   <div class="ttable" id="ttable"></div>
+</div>
+
+<div class="notes" id="gym" role="dialog" aria-modal="true" aria-label="Trainingsprotokoll">
+  <h2 class="ntitle"><button type="button" id="gymBack" style="color:#32ADE6">Training</button></h2>
+  <div class="gliste" id="gliste"></div>
 </div>
 
 <!-- Connect sheet -->
@@ -464,6 +537,7 @@
   /* Training: eine Zeile je Tag, { "2026-09-20": { c:"3200", p:"135" } } */
   /* w = Gewicht am Morgen, c = Kalorien, p = Eiweiss */
   var meals = {};
+  var gym = {};   /* 22.09.2026: Trainingsprotokoll, 12 Einheiten */
 
   var WEEKS = 51;
   var CELLS = WEEKS * 7;              /* 357 */
@@ -503,6 +577,7 @@
           updatedAt = p.updatedAt || 0;
           notes = (p.notes && typeof p.notes === "object" && !Array.isArray(p.notes)) ? p.notes : {};
           meals = (p.meals && typeof p.meals === "object" && !Array.isArray(p.meals)) ? p.meals : {};
+          gym = (p.gym && typeof p.gym === "object" && !Array.isArray(p.gym)) ? p.gym : {};
           return;
         }
       }
@@ -511,7 +586,7 @@
     } catch (e) {}
   }
   function save(){
-    try { localStorage.setItem(KEY, JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes, meals: meals })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes, meals: meals, gym: gym })); } catch (e) {}
   }
   function remember(k, v){
     try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {}
@@ -1006,7 +1081,7 @@
       "Content-Type": "application/json"
     };
   }
-  function payload(){ return JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes, meals: meals }, null, 1); }
+  function payload(){ return JSON.stringify({ updatedAt: updatedAt, days: data, notes: notes, meals: meals, gym: gym }, null, 1); }
 
   function planPush(){
     if (!stored(TKEY)) return;
@@ -1061,8 +1136,10 @@
           take(p.days);
           notes = (p.notes && typeof p.notes === "object" && !Array.isArray(p.notes)) ? p.notes : {};
           meals = (p.meals && typeof p.meals === "object" && !Array.isArray(p.meals)) ? p.meals : {};
+          gym = (p.gym && typeof p.gym === "object" && !Array.isArray(p.gym)) ? p.gym : {};
           buildTable();
           buildMeals();
+          if (typeof gymListe === "function") gymListe();
           updatedAt = p.updatedAt || 0;
           save();
           paintAll();
@@ -1257,6 +1334,8 @@
   document.addEventListener("keydown", function(e){
     if (e.key === "Escape" && notesEl.classList.contains("open")) closeNotes();
     if (e.key === "Escape" && trainEl.classList.contains("open")) closeTrain();
+    if (e.key === "Escape" && document.getElementById("food").classList.contains("open")) blattZu(document.getElementById("food"));
+    if (e.key === "Escape" && document.getElementById("gym").classList.contains("open")) blattZu(document.getElementById("gym"));
   });
 
   /* ---------- training page ---------- */
@@ -1319,25 +1398,221 @@
     trainTimer = setTimeout(function(){ save(); planPush(); }, 400);
   }
 
-  function openTrain(){
-    buildMeals();
-    clearTimeout(trainTimerOut);
-    trainEl.style.transition = "";
-    trainEl.style.transform = "";
-    trainEl.classList.add("mounted");
-    void trainEl.offsetWidth;
-    trainEl.classList.add("open");
-    setTimeout(function(){ var f = ttable.querySelector(".ncell"); if (f) f.focus(); }, 320);
+  /* 22.09.2026: hinter dem T liegt jetzt eine Wahl. Erst e oder t, dann das
+     Blatt. Ein Blatt oeffnet und schliesst immer gleich, deshalb zwei
+     Hilfsfunktionen statt dreimal derselbe Code. */
+  var foodEl = document.getElementById("food");
+  var gymEl = document.getElementById("gym");
+  var zuTimer = {};
+
+  function blattAuf(el, danach){
+    clearTimeout(zuTimer[el.id]);
+    el.style.transition = "";
+    el.style.transform = "";
+    el.classList.add("mounted");
+    void el.offsetWidth;
+    el.classList.add("open");
+    if (danach) setTimeout(danach, 320);
   }
-  function closeTrain(){
+  function blattZu(el){
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    trainEl.style.transition = "";
-    trainEl.style.transform = "";
-    trainEl.classList.remove("open");
-    clearTimeout(trainTimerOut);
-    trainTimerOut = setTimeout(function(){ trainEl.classList.remove("mounted"); }, 320);
+    el.style.transition = "";
+    el.style.transform = "";
+    el.classList.remove("open");
+    clearTimeout(zuTimer[el.id]);
+    zuTimer[el.id] = setTimeout(function(){ el.classList.remove("mounted"); }, 320);
   }
+
+  function openTrain(){ blattAuf(trainEl); }
+  function closeTrain(){ blattZu(trainEl); }
   document.getElementById("trainBack").addEventListener("click", closeTrain);
+
+  document.getElementById("waehleE").addEventListener("click", function(){
+    buildMeals();
+    blattAuf(foodEl, function(){ var f = ttable.querySelector(".ncell"); if (f) f.focus(); });
+  });
+  document.getElementById("waehleT").addEventListener("click", function(){
+    gymListe();
+    blattAuf(gymEl);
+  });
+  document.getElementById("foodBack").addEventListener("click", function(){ blattZu(foodEl); });
+  document.getElementById("gymBack").addEventListener("click", function(){
+    if (gymOffen) { gymOffen = null; gymListe(); } else { blattZu(gymEl); }
+  });
+
+  /* ---------- Trainingsprotokoll, 12 Einheiten ----------
+     Derselbe Plan wie in gedaechtnis/TRAINING.md: Ganzkoerper A, B, C,
+     Montag, Mittwoch, Freitag, vier Wochen. */
+  var GPLAN = {
+    A: { kurz: "Schwerpunkt Kniebeuge", ue: [
+      ["Kniebeuge", 3, "5-8"],
+      ["Schrägbankdrücken Kurzhantel", 3, "6-10"],
+      ["Langhantelrudern", 3, "8-12"],
+      ["Beinbeuger", 2, "10-15"],
+      ["Seitheben", 3, "12-20"],
+      ["Trizeps über Kopf", 2, "10-15"],
+      ["Bauch", 2, "10-15"]
+    ]},
+    B: { kurz: "Schwerpunkt Kreuzheben und Klimmzug", ue: [
+      ["Rumänisches Kreuzheben", 3, "6-10"],
+      ["Klimmzüge", 3, "6-10"],
+      ["Flachbankdrücken Langhantel", 3, "5-8"],
+      ["Beinpresse", 3, "10-15"],
+      ["Seitheben", 3, "12-20"],
+      ["Bizeps Kurzhantel", 3, "8-12"]
+    ]},
+    C: { kurz: "Schwerpunkt Schulterdrücken", ue: [
+      ["Frontkniebeuge oder Beinpresse", 3, "8-12"],
+      ["Schulterdrücken Kurzhantel", 3, "6-10"],
+      ["Latzug eng", 3, "10-12"],
+      ["Dips oder Schrägbank Kurzhantel", 3, "8-12"],
+      ["Beinstrecker", 2, "12-15"],
+      ["Face Pulls", 3, "15-20"],
+      ["Wadenheben", 3, "8-15"]
+    ]}
+  };
+  var GTAGE = [];
+  for (var gw = 1; gw <= 4; gw++) for (var gi = 0; gi < 3; gi++) {
+    GTAGE.push({ woche: gw, art: "ABC"[gi], id: gw + "ABC"[gi] });
+  }
+  var gymOffen = null, gymTimer = null;
+  var glisteEl = document.getElementById("gliste");
+
+  function gymObj(){
+    if (gym && typeof gym === "object" && !Array.isArray(gym)) return gym;
+    gym = {};
+    return gym;
+  }
+  function gEinheit(id){
+    var o = gymObj();
+    if (!o[id]) o[id] = { saetze: {}, datum: "", fertig: false };
+    if (!o[id].saetze) o[id].saetze = {};
+    return o[id];
+  }
+  function gGefuellt(id){
+    var o = gymObj(), e = o[id];
+    if (!e) return 0;
+    var n = 0;
+    for (var k in e.saetze) for (var i = 0; i < e.saetze[k].length; i++) {
+      var x = e.saetze[k][i];
+      if (x && x.kg !== "" && x.kg != null && x.wdh !== "" && x.wdh != null) n++;
+    }
+    return n;
+  }
+  function gSpeichern(){
+    updatedAt = Date.now();
+    clearTimeout(gymTimer);
+    gymTimer = setTimeout(function(){ save(); planPush(); }, 400);
+  }
+  function gHeute(){
+    var d = new Date();
+    return d2(d.getDate()) + "." + d2(d.getMonth() + 1) + "." + d.getFullYear();
+  }
+
+  function gymListe(){
+    gymOffen = null;
+    document.getElementById("gymBack").textContent = "Training";
+    glisteEl.innerHTML = "";
+    var o = gymObj();
+    GTAGE.forEach(function(t){
+      var voll = 0;
+      GPLAN[t.art].ue.forEach(function(u){ voll += u[1]; });
+      var n = gGefuellt(t.id), e = o[t.id];
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "gkarte";
+      var punkt = document.createElement("span");
+      punkt.className = "gpunkt" + ((e && e.fertig) ? " fertig" : (n > 0 ? " teil" : ""));
+      var txt = document.createElement("span");
+      var b1 = document.createElement("b");
+      b1.textContent = "Woche " + t.woche + ", " + t.art;
+      var s1 = document.createElement("span");
+      s1.className = "gwo";
+      s1.textContent = GPLAN[t.art].kurz + " · " + n + " von " + voll + " Sätzen" +
+        ((e && e.datum) ? " · " + e.datum : "");
+      txt.appendChild(b1); txt.appendChild(s1);
+      b.appendChild(punkt); b.appendChild(txt);
+      b.addEventListener("click", function(){ gymEinheit(t); });
+      glisteEl.appendChild(b);
+    });
+  }
+
+  /* Die Zahlen aus der letzten gleichen Einheit, damit die doppelte
+     Progression ohne Blaettern sichtbar ist. */
+  function gLetztesMal(tag, name){
+    var o = gymObj(), vorher = null;
+    for (var i = 0; i < GTAGE.length; i++) {
+      var t = GTAGE[i];
+      if (t.id === tag.id) break;
+      if (t.art !== tag.art) continue;
+      var e = o[t.id];
+      if (!e || !e.saetze[name]) continue;
+      var hat = false;
+      e.saetze[name].forEach(function(x){ if (x && x.kg !== "" && x.wdh !== "") hat = true; });
+      if (hat) vorher = e.saetze[name];
+    }
+    if (!vorher) return "";
+    var teile = [];
+    vorher.forEach(function(x){ if (x && x.kg !== "" && x.wdh !== "") teile.push(x.kg + " x " + x.wdh); });
+    return teile.length ? "Zuletzt: " + teile.join(", ") : "";
+  }
+
+  function gymEinheit(tag){
+    gymOffen = tag;
+    var e = gEinheit(tag.id);
+    document.getElementById("gymBack").textContent = "Woche " + tag.woche + ", " + tag.art;
+    glisteEl.innerHTML = "";
+    var kopf = document.createElement("p");
+    kopf.className = "gziel";
+    kopf.textContent = GPLAN[tag.art].kurz + (e.datum ? " · gemacht am " + e.datum : " · noch nicht gemacht");
+    glisteEl.appendChild(kopf);
+
+    GPLAN[tag.art].ue.forEach(function(u){
+      var name = u[0], anz = u[1], wdh = u[2];
+      if (!e.saetze[name]) e.saetze[name] = [];
+      while (e.saetze[name].length < anz) e.saetze[name].push({ kg: "", wdh: "" });
+      var d = document.createElement("div");
+      d.className = "guebung";
+      var h = document.createElement("h3"); h.textContent = name;
+      var z = document.createElement("p"); z.className = "gziel";
+      z.textContent = anz + " Sätze, " + wdh + " Wiederholungen";
+      d.appendChild(h); d.appendChild(z);
+      var lm = gLetztesMal(tag, name);
+      if (lm) { var l = document.createElement("p"); l.className = "gletzt"; l.textContent = lm; d.appendChild(l); }
+      for (var i = 0; i < anz; i++) (function(i){
+        var r = document.createElement("div"); r.className = "gsatz";
+        var nr = document.createElement("span"); nr.className = "gnr"; nr.textContent = (i + 1) + ".";
+        r.appendChild(nr);
+        ["kg", "wdh"].forEach(function(feld){
+          var f = document.createElement("div"); f.className = "gfeld";
+          var inp = document.createElement("input");
+          inp.type = "text"; inp.inputMode = "decimal"; inp.autocomplete = "off"; inp.spellcheck = false;
+          inp.value = e.saetze[name][i][feld];
+          inp.addEventListener("input", function(){
+            e.saetze[name][i][feld] = inp.value;
+            if (!e.datum) { e.datum = gHeute(); kopf.textContent = GPLAN[tag.art].kurz + " · gemacht am " + e.datum; }
+            gSpeichern();
+          });
+          var eh = document.createElement("span"); eh.className = "geh";
+          eh.textContent = feld === "kg" ? "kg" : "Wdh";
+          f.appendChild(inp); f.appendChild(eh); r.appendChild(f);
+        });
+        d.appendChild(r);
+      })(i);
+      glisteEl.appendChild(d);
+    });
+
+    var fertig = document.createElement("button");
+    fertig.type = "button"; fertig.className = "gfertig";
+    fertig.textContent = e.fertig ? "Wieder offen" : "Einheit abschließen";
+    fertig.addEventListener("click", function(){
+      e.fertig = !e.fertig;
+      if (e.fertig && !e.datum) e.datum = gHeute();
+      gSpeichern(); gymListe();
+    });
+    glisteEl.appendChild(fertig);
+    glisteEl.scrollTop = 0;
+  }
 
   /* ---------- connect sheet ---------- */
 
