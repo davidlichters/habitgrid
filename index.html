@@ -1435,31 +1435,31 @@
      Derselbe Plan wie in gedaechtnis/TRAINING.md: Ganzkoerper A, B, C,
      Montag, Mittwoch, Freitag, vier Wochen. */
   var GPLAN = {
-    A: { kurz: "Schwerpunkt Kniebeuge", ue: [
-      ["Kniebeuge", 3, "5-8"],
-      ["Schrägbankdrücken Kurzhantel", 3, "6-10"],
-      ["Langhantelrudern", 3, "8-12"],
-      ["Beinbeuger", 2, "10-15"],
-      ["Seitheben", 3, "12-20"],
-      ["Trizeps über Kopf", 2, "10-15"],
-      ["Bauch", 2, "10-15"]
+    A: { kurz: "Squat focus", ue: [
+      ["Squat", 3, "5-8"],
+      ["Incline dumbbell press", 3, "6-10"],
+      ["Barbell row", 3, "8-12"],
+      ["Leg curl", 2, "10-15"],
+      ["Lateral raise", 3, "12-20"],
+      ["Overhead triceps extension", 2, "10-15"],
+      ["Abs", 2, "10-15"]
     ]},
-    B: { kurz: "Schwerpunkt Kreuzheben und Klimmzug", ue: [
-      ["Rumänisches Kreuzheben", 3, "6-10"],
-      ["Klimmzüge", 3, "6-10"],
-      ["Flachbankdrücken Langhantel", 3, "5-8"],
-      ["Beinpresse", 3, "10-15"],
-      ["Seitheben", 3, "12-20"],
-      ["Bizeps Kurzhantel", 3, "8-12"]
+    B: { kurz: "Deadlift and pull-up focus", ue: [
+      ["Romanian deadlift", 3, "6-10"],
+      ["Pull-ups", 3, "6-10"],
+      ["Barbell bench press", 3, "5-8"],
+      ["Leg press", 3, "10-15"],
+      ["Lateral raise", 3, "12-20"],
+      ["Dumbbell curl", 3, "8-12"]
     ]},
-    C: { kurz: "Schwerpunkt Schulterdrücken", ue: [
-      ["Frontkniebeuge oder Beinpresse", 3, "8-12"],
-      ["Schulterdrücken Kurzhantel", 3, "6-10"],
-      ["Latzug eng", 3, "10-12"],
-      ["Dips oder Schrägbank Kurzhantel", 3, "8-12"],
-      ["Beinstrecker", 2, "12-15"],
-      ["Face Pulls", 3, "15-20"],
-      ["Wadenheben", 3, "8-15"]
+    C: { kurz: "Shoulder press focus", ue: [
+      ["Front squat or leg press", 3, "8-12"],
+      ["Dumbbell shoulder press", 3, "6-10"],
+      ["Close-grip lat pulldown", 3, "10-12"],
+      ["Dips or incline dumbbell press", 3, "8-12"],
+      ["Leg extension", 2, "12-15"],
+      ["Face pulls", 3, "15-20"],
+      ["Calf raise", 3, "8-15"]
     ]}
   };
   var GTAGE = [];
@@ -1534,7 +1534,7 @@
     if (!vorher) return "";
     var teile = [];
     vorher.forEach(function(x){ if (x && x.kg !== "" && x.wdh !== "") teile.push(x.kg + " x " + x.wdh); });
-    return teile.length ? "Zuletzt: " + teile.join(", ") : "";
+    return teile.length ? "Last time: " + teile.join(", ") : "";
   }
 
   function gymEinheit(tag){
@@ -1545,7 +1545,7 @@
     glisteEl.innerHTML = "";
     var kopf = document.createElement("p");
     kopf.className = "gziel";
-    kopf.textContent = GPLAN[tag.art].kurz + (e.datum ? " · gemacht am " + e.datum : " · noch nicht gemacht");
+    kopf.textContent = GPLAN[tag.art].kurz + (e.datum ? " · done " + e.datum : " · not done yet");
     glisteEl.appendChild(kopf);
 
     GPLAN[tag.art].ue.forEach(function(u){
@@ -1556,7 +1556,7 @@
       d.className = "guebung";
       var h = document.createElement("h3"); h.textContent = name;
       var z = document.createElement("p"); z.className = "gziel";
-      z.textContent = anz + " Sätze, " + wdh + " Wiederholungen";
+      z.textContent = anz + " sets, " + wdh + " reps";
       d.appendChild(h); d.appendChild(z);
       var lm = gLetztesMal(tag, name);
       if (lm) { var l = document.createElement("p"); l.className = "gletzt"; l.textContent = lm; d.appendChild(l); }
@@ -1571,11 +1571,11 @@
           inp.value = e.saetze[name][i][feld];
           inp.addEventListener("input", function(){
             e.saetze[name][i][feld] = inp.value;
-            if (!e.datum) { e.datum = gHeute(); kopf.textContent = GPLAN[tag.art].kurz + " · gemacht am " + e.datum; }
+            if (!e.datum) { e.datum = gHeute(); kopf.textContent = GPLAN[tag.art].kurz + " · done " + e.datum; }
             gSpeichern();
           });
           var eh = document.createElement("span"); eh.className = "geh";
-          eh.textContent = feld === "kg" ? "kg" : "Wdh";
+          eh.textContent = feld === "kg" ? "kg" : "reps";
           f.appendChild(inp); f.appendChild(eh); r.appendChild(f);
         });
         d.appendChild(r);
@@ -1585,7 +1585,7 @@
 
     var fertig = document.createElement("button");
     fertig.type = "button"; fertig.className = "gfertig";
-    fertig.textContent = e.fertig ? "Wieder offen" : "Einheit abschließen";
+    fertig.textContent = e.fertig ? "Reopen" : "Mark as done";
     fertig.addEventListener("click", function(){
       e.fertig = !e.fertig;
       if (e.fertig && !e.datum) e.datum = gHeute();
