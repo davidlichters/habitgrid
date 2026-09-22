@@ -473,7 +473,7 @@
 
 <!-- Training page behind the blue grid -->
 <div class="notes" id="train" role="dialog" aria-modal="true" aria-label="Training und Ernaehrung">
-  <h2 class="ntitle"><button type="button" id="trainBack" style="color:#32ADE6">Training</button></h2>
+  <h2 class="ntitle"><button type="button" id="trainBack" style="color:#32ADE6">t</button></h2>
   <div class="wahl">
     <button type="button" id="waehleE" aria-label="Ernährung">e</button>
     <button type="button" id="waehleT" aria-label="Training">t</button>
@@ -481,12 +481,12 @@
 </div>
 
 <div class="notes" id="food" role="dialog" aria-modal="true" aria-label="Ernaehrung">
-  <h2 class="ntitle"><button type="button" id="foodBack" style="color:#32ADE6">Ernährung</button></h2>
+  <h2 class="ntitle"><button type="button" id="foodBack" style="color:#32ADE6">e</button></h2>
   <div class="ttable" id="ttable"></div>
 </div>
 
 <div class="notes" id="gym" role="dialog" aria-modal="true" aria-label="Trainingsprotokoll">
-  <h2 class="ntitle"><button type="button" id="gymBack" style="color:#32ADE6">Training</button></h2>
+  <h2 class="ntitle"><button type="button" id="gymBack" style="color:#32ADE6">t</button></h2>
   <div class="gliste" id="gliste"></div>
 </div>
 
@@ -1502,7 +1502,7 @@
 
   function gymListe(){
     gymOffen = null;
-    document.getElementById("gymBack").textContent = "Training";
+    document.getElementById("gymBack").textContent = "t";
     glisteEl.className = "gliste raster";
     glisteEl.innerHTML = "";
     var o = gymObj();
