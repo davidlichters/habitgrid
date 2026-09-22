@@ -300,17 +300,18 @@
     flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
     padding:4px 20px calc(20px + env(safe-area-inset-bottom));
   }
+  /* 22.09.2026, David: in der Liste steht nur 1a, 1b, 1c, 2a und so weiter.
+     Keine Beschreibung, keine Satzzahl. Der Zustand steckt in der Farbe. */
+  .gliste.raster{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-content:start}
   .gkarte{
-    appearance:none;border:0;cursor:pointer;font-family:inherit;text-align:left;
-    width:100%;background:var(--ios-ground);border-radius:14px;padding:13px 14px;
-    margin-bottom:8px;display:flex;align-items:center;gap:12px;color:#000;
+    appearance:none;border:0;cursor:pointer;font-family:inherit;text-align:center;
+    background:var(--ios-ground);border-radius:16px;padding:20px 0;
+    font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1;
+    color:#32ADE6;touch-action:manipulation;
   }
   .gkarte:active{opacity:.6}
-  .gpunkt{width:11px;height:11px;border-radius:50%;background:#D2D2D7;flex:0 0 auto}
-  .gpunkt.fertig{background:#30D158}
-  .gpunkt.teil{background:#FFB020}
-  .gkarte b{font-size:16px;font-weight:600;display:block}
-  .gkarte .gwo{font-size:13px;color:#8E8E93}
+  .gkarte.fertig{color:#30D158}
+  .gkarte.teil{color:#FFB020}
   .guebung{border-top:1px solid var(--ios-sep);padding:14px 0 6px}
   .guebung h3{margin:0;font-size:17px;font-weight:600}
   .gziel{color:#8E8E93;font-size:13px;margin:1px 0 8px}
@@ -1502,26 +1503,15 @@
   function gymListe(){
     gymOffen = null;
     document.getElementById("gymBack").textContent = "Training";
+    glisteEl.className = "gliste raster";
     glisteEl.innerHTML = "";
     var o = gymObj();
     GTAGE.forEach(function(t){
-      var voll = 0;
-      GPLAN[t.art].ue.forEach(function(u){ voll += u[1]; });
       var n = gGefuellt(t.id), e = o[t.id];
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "gkarte";
-      var punkt = document.createElement("span");
-      punkt.className = "gpunkt" + ((e && e.fertig) ? " fertig" : (n > 0 ? " teil" : ""));
-      var txt = document.createElement("span");
-      var b1 = document.createElement("b");
-      b1.textContent = "Woche " + t.woche + ", " + t.art;
-      var s1 = document.createElement("span");
-      s1.className = "gwo";
-      s1.textContent = GPLAN[t.art].kurz + " · " + n + " von " + voll + " Sätzen" +
-        ((e && e.datum) ? " · " + e.datum : "");
-      txt.appendChild(b1); txt.appendChild(s1);
-      b.appendChild(punkt); b.appendChild(txt);
+      b.className = "gkarte" + ((e && e.fertig) ? " fertig" : (n > 0 ? " teil" : ""));
+      b.textContent = t.woche + t.art.toLowerCase();
       b.addEventListener("click", function(){ gymEinheit(t); });
       glisteEl.appendChild(b);
     });
@@ -1550,7 +1540,8 @@
   function gymEinheit(tag){
     gymOffen = tag;
     var e = gEinheit(tag.id);
-    document.getElementById("gymBack").textContent = "Woche " + tag.woche + ", " + tag.art;
+    document.getElementById("gymBack").textContent = tag.woche + tag.art.toLowerCase();
+    glisteEl.className = "gliste";
     glisteEl.innerHTML = "";
     var kopf = document.createElement("p");
     kopf.className = "gziel";
