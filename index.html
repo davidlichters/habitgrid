@@ -283,21 +283,17 @@
   /* ---------- Wahl zwischen Ernaehrung und Training, 22.09.2026 ----------
      David: beim T nicht direkt die Kalorien, sondern zuerst zwei Knoepfe. */
   .wahl{
-    flex:1;display:flex;flex-direction:column;gap:12px;
+    flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:12px;
     padding:8px 20px calc(20px + env(safe-area-inset-bottom));
   }
   .wahl button{
-    appearance:none;border:0;cursor:pointer;font-family:inherit;text-align:left;
-    background:var(--ios-ground);border-radius:16px;padding:20px;
-    display:flex;align-items:center;gap:16px;color:#000;
+    appearance:none;border:0;cursor:pointer;font-family:inherit;
+    background:var(--ios-ground);border-radius:20px;
+    aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
+    font-size:64px;font-weight:700;letter-spacing:-.04em;line-height:1;
+    color:#32ADE6;padding:0;touch-action:manipulation;
   }
   .wahl button:active{opacity:.6}
-  .wahl .buchstabe{
-    font-size:34px;font-weight:700;letter-spacing:-.04em;color:#32ADE6;
-    width:34px;flex:0 0 auto;text-align:center;line-height:1;
-  }
-  .wahl .was{font-size:19px;font-weight:600;letter-spacing:-.02em}
-  .wahl .was span{display:block;font-size:14px;font-weight:400;color:#8E8E93}
 
   /* ---------- Trainingsprotokoll ---------- */
   .gliste{
@@ -478,14 +474,8 @@
 <div class="notes" id="train" role="dialog" aria-modal="true" aria-label="Training und Ernaehrung">
   <h2 class="ntitle"><button type="button" id="trainBack" style="color:#32ADE6">Training</button></h2>
   <div class="wahl">
-    <button type="button" id="waehleE">
-      <span class="buchstabe">e</span>
-      <span class="was">Ernährung<span>Gewicht, Kalorien, Protein</span></span>
-    </button>
-    <button type="button" id="waehleT">
-      <span class="buchstabe">t</span>
-      <span class="was">Training<span>Gewicht und Wiederholungen je Satz</span></span>
-    </button>
+    <button type="button" id="waehleE" aria-label="Ernährung">e</button>
+    <button type="button" id="waehleT" aria-label="Training">t</button>
   </div>
 </div>
 
